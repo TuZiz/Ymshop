@@ -115,6 +115,9 @@ gradle-app.setting
 run/
 runs/
 
+# Root shops folder (user data)
+shops/
+
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
 
