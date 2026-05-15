@@ -6,6 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import ym.ymshop.model.TradeMode
 import ym.ymshop.model.TradeSide
+import ym.ymshop.storage.AtomicShopStatsResult
 import ym.ymshop.storage.DailyCurrencyTotals
 import ym.ymshop.storage.DailyTradeKey
 import ym.ymshop.storage.DatabaseSettings
@@ -80,6 +81,26 @@ class StorageBackedDataServicesTest {
         assertEquals(0L, persisted.buy)
         assertEquals(77L, persisted.buyResetMarker)
         assertTrue(backend.flushCount > 0)
+    }
+
+    @Test
+    fun `yaml backend does not advertise atomic cross-server shop stats`() {
+        val backend = FakePlayerDataBackend()
+
+        assertFalse(backend.supportsAtomicShopStats)
+        assertEquals(
+            AtomicShopStatsResult.Unavailable,
+            backend.reserveShopTradeStats(
+                shopId = "main",
+                entryId = "diamond",
+                playerId = UUID.randomUUID(),
+                side = TradeSide.BUY,
+                amount = 1,
+                limits = ym.ymshop.model.TradeLimitRules(),
+                nowMillis = 0L,
+                zoneId = java.time.ZoneId.of("UTC")
+            )
+        )
     }
 
     private class FakePlayerDataBackend : PlayerDataBackend {

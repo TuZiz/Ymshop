@@ -3,8 +3,16 @@ package ym.ymshop.storage
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.bukkit.plugin.java.JavaPlugin
+import ym.ymshop.model.EntryStats
+import ym.ymshop.model.TradeLimitRules
+import ym.ymshop.model.TradeReservation
+import ym.ymshop.model.TradeSide
+import ym.ymshop.service.ResetScopeAction
+import ym.ymshop.service.ShopResetSupport
 import java.sql.Connection
 import java.sql.Date
+import java.time.Instant
+import java.time.ZoneId
 import java.util.UUID
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -167,14 +175,8 @@ class SqlPlayerDataBackend(
         dirtyPlayerKeys: Set<ShopPlayerStatsKey>,
         dirtyGlobalEntryIds: Set<String>
     ) {
-        val playerRows = dirtyPlayerKeys.mapNotNull { key -> snapshot.playerRows[key]?.copy()?.let { key to it } }
-        val globalRows = dirtyGlobalEntryIds.mapNotNull { entryId -> snapshot.globalRows[entryId]?.copy()?.let { entryId to it } }
-        if (playerRows.isEmpty() && globalRows.isEmpty()) {
-            return
-        }
-        submitWrite("shop:$shopId") { connection ->
-            writeShopChanges(connection, shopId, playerRows, globalRows)
-        }
+        // SQL shop stats are cross-server state. Trade and reset changes must go through
+        // reserveShopTradeStats(), which checks limits and increments in one transaction.
     }
 
     override fun saveShopChangesStrict(
@@ -183,20 +185,60 @@ class SqlPlayerDataBackend(
         dirtyPlayerKeys: Set<ShopPlayerStatsKey>,
         dirtyGlobalEntryIds: Set<String>
     ): Boolean {
-        val playerRows = dirtyPlayerKeys.mapNotNull { key -> snapshot.playerRows[key]?.copy()?.let { key to it } }
-        val globalRows = dirtyGlobalEntryIds.mapNotNull { entryId -> snapshot.globalRows[entryId]?.copy()?.let { entryId to it } }
-        if (playerRows.isEmpty() && globalRows.isEmpty()) {
-            return true
+        // Strict SQL persistence is satisfied by the atomic reservation path.
+        return true
+    }
+
+    override val supportsAtomicShopStats: Boolean
+        get() = true
+
+    override fun reserveShopTradeStats(
+        shopId: String,
+        entryId: String,
+        playerId: UUID,
+        side: TradeSide,
+        amount: Int,
+        limits: TradeLimitRules,
+        nowMillis: Long,
+        zoneId: ZoneId
+    ): AtomicShopStatsResult {
+        if (amount <= 0) {
+            return AtomicShopStatsResult.Failed("Trade amount must be positive")
         }
-        val future = executor.submit<Boolean> {
+        val future = executor.submit<AtomicShopStatsResult> {
             dataSource.connection.use { connection ->
-                writeShopChanges(connection, shopId, playerRows, globalRows)
+                reserveShopTradeStatsInTransaction(
+                    connection = connection,
+                    shopId = shopId,
+                    entryId = entryId,
+                    playerId = playerId,
+                    side = side,
+                    amount = amount,
+                    limits = limits,
+                    nowMillis = nowMillis,
+                    zoneId = zoneId
+                )
             }
-            true
         }
         return runCatching { future.get(30, TimeUnit.SECONDS) }
             .onFailure { ex ->
-                plugin.logger.severe("Ymshop SQL strict stats write failed [shop:$shopId]: ${ex.message}")
+                plugin.logger.severe("Ymshop SQL atomic stats reservation failed [shop:$shopId entry:$entryId]: ${ex.message}")
+                ex.printStackTrace()
+            }
+            .getOrElse { AtomicShopStatsResult.Failed(it.message ?: "SQL atomic reservation failed") }
+    }
+
+    override fun rollbackShopTradeStats(reservation: TradeReservation): Boolean {
+        val future = executor.submit<Boolean> {
+            dataSource.connection.use { connection ->
+                rollbackShopTradeStatsInTransaction(connection, reservation)
+            }
+        }
+        return runCatching { future.get(30, TimeUnit.SECONDS) }
+            .onFailure { ex ->
+                plugin.logger.severe(
+                    "Ymshop SQL atomic stats rollback failed [shop:${reservation.shopId} entry:${reservation.entryId}]: ${ex.message}"
+                )
                 ex.printStackTrace()
             }
             .getOrDefault(false)
@@ -306,6 +348,301 @@ class SqlPlayerDataBackend(
         }
     }
 
+    private fun reserveShopTradeStatsInTransaction(
+        connection: Connection,
+        shopId: String,
+        entryId: String,
+        playerId: UUID,
+        side: TradeSide,
+        amount: Int,
+        limits: TradeLimitRules,
+        nowMillis: Long,
+        zoneId: ZoneId
+    ): AtomicShopStatsResult {
+        connection.autoCommit = false
+        try {
+            lockEntryForTransaction(connection, shopId, entryId)
+            ensureStatsRows(connection, shopId, entryId, playerId)
+            val playerRow = selectPlayerStatsForUpdate(connection, shopId, entryId, playerId)
+            val globalRow = selectGlobalStatsForUpdate(connection, shopId, entryId)
+            val now = Instant.ofEpochMilli(nowMillis)
+            applyResetPolicies(playerRow, limits, now, zoneId)
+            applyResetPolicies(globalRow, limits, now, zoneId)
+
+            limitExceeded(playerRow.total + amount, limits.playerLimit, "limit-player")?.let {
+                connection.rollback()
+                return it
+            }
+            limitExceeded(globalRow.total + amount, limits.globalLimit, "limit-global")?.let {
+                connection.rollback()
+                return it
+            }
+
+            when (side) {
+                TradeSide.BUY -> {
+                    limitExceeded(playerRow.buy + amount, limits.buyLimit, "limit-buy")?.let {
+                        connection.rollback()
+                        return it
+                    }
+                    limitExceeded(globalRow.buy + amount, limits.buyGlobalLimit, "limit-buy")?.let {
+                        connection.rollback()
+                        return it
+                    }
+                    playerRow.buy += amount
+                    globalRow.buy += amount
+                }
+
+                TradeSide.SELL -> {
+                    limitExceeded(playerRow.sell + amount, limits.sellLimit, "limit-sell")?.let {
+                        connection.rollback()
+                        return it
+                    }
+                    limitExceeded(globalRow.sell + amount, limits.sellGlobalLimit, "limit-sell")?.let {
+                        connection.rollback()
+                        return it
+                    }
+                    playerRow.sell += amount
+                    globalRow.sell += amount
+                }
+            }
+            playerRow.total += amount
+            globalRow.total += amount
+            updatePlayerStats(connection, shopId, entryId, playerId, playerRow)
+            updateGlobalStats(connection, shopId, entryId, globalRow)
+            connection.commit()
+            return AtomicShopStatsResult.Reserved(
+                reservation = TradeReservation(
+                    shopId = shopId,
+                    entryId = entryId,
+                    playerId = playerId,
+                    side = side,
+                    amount = amount,
+                    playerBuyResetMarker = playerRow.buyResetMarker,
+                    playerSellResetMarker = playerRow.sellResetMarker,
+                    globalBuyResetMarker = globalRow.buyResetMarker,
+                    globalSellResetMarker = globalRow.sellResetMarker,
+                    reservedAt = now
+                ),
+                stats = EntryStats(
+                    playerTotal = playerRow.total,
+                    playerBuy = playerRow.buy,
+                    playerSell = playerRow.sell,
+                    globalTotal = globalRow.total,
+                    globalBuy = globalRow.buy,
+                    globalSell = globalRow.sell
+                )
+            )
+        } catch (ex: Exception) {
+            connection.rollback()
+            throw ex
+        } finally {
+            connection.autoCommit = true
+        }
+    }
+
+    private fun rollbackShopTradeStatsInTransaction(
+        connection: Connection,
+        reservation: TradeReservation
+    ): Boolean {
+        connection.autoCommit = false
+        try {
+            lockEntryForTransaction(connection, reservation.shopId, reservation.entryId)
+            ensureStatsRows(connection, reservation.shopId, reservation.entryId, reservation.playerId)
+            val playerRow = selectPlayerStatsForUpdate(
+                connection,
+                reservation.shopId,
+                reservation.entryId,
+                reservation.playerId
+            )
+            val globalRow = selectGlobalStatsForUpdate(connection, reservation.shopId, reservation.entryId)
+            val amount = reservation.amount.toLong()
+            playerRow.total = (playerRow.total - amount).coerceAtLeast(0L)
+            globalRow.total = (globalRow.total - amount).coerceAtLeast(0L)
+            when (reservation.side) {
+                TradeSide.BUY -> {
+                    if (playerRow.buyResetMarker == reservation.playerBuyResetMarker) {
+                        playerRow.buy = (playerRow.buy - amount).coerceAtLeast(0L)
+                    }
+                    if (globalRow.buyResetMarker == reservation.globalBuyResetMarker) {
+                        globalRow.buy = (globalRow.buy - amount).coerceAtLeast(0L)
+                    }
+                }
+
+                TradeSide.SELL -> {
+                    if (playerRow.sellResetMarker == reservation.playerSellResetMarker) {
+                        playerRow.sell = (playerRow.sell - amount).coerceAtLeast(0L)
+                    }
+                    if (globalRow.sellResetMarker == reservation.globalSellResetMarker) {
+                        globalRow.sell = (globalRow.sell - amount).coerceAtLeast(0L)
+                    }
+                }
+            }
+            updatePlayerStats(connection, reservation.shopId, reservation.entryId, reservation.playerId, playerRow)
+            updateGlobalStats(connection, reservation.shopId, reservation.entryId, globalRow)
+            connection.commit()
+            return true
+        } catch (ex: Exception) {
+            connection.rollback()
+            throw ex
+        } finally {
+            connection.autoCommit = true
+        }
+    }
+
+    private fun lockEntryForTransaction(connection: Connection, shopId: String, entryId: String) {
+        if (settings.type != DatabaseType.POSTGRESQL) {
+            return
+        }
+        connection.prepareStatement("SELECT pg_advisory_xact_lock(?, ?)").use { statement ->
+            statement.setInt(1, shopId.lowercase().hashCode())
+            statement.setInt(2, entryId.lowercase().hashCode())
+            statement.executeQuery().use { }
+        }
+    }
+
+    private fun ensureStatsRows(connection: Connection, shopId: String, entryId: String, playerId: UUID) {
+        connection.prepareStatement(dialect.insertPlayerStatsIfAbsentSql).use { statement ->
+            statement.setString(1, shopId)
+            statement.setString(2, playerId.toString())
+            statement.setString(3, entryId)
+            statement.executeUpdate()
+        }
+        connection.prepareStatement(dialect.insertGlobalStatsIfAbsentSql).use { statement ->
+            statement.setString(1, shopId)
+            statement.setString(2, entryId)
+            statement.executeUpdate()
+        }
+    }
+
+    private fun selectPlayerStatsForUpdate(
+        connection: Connection,
+        shopId: String,
+        entryId: String,
+        playerId: UUID
+    ): MutableStatsRow {
+        connection.prepareStatement(
+            """
+            SELECT total, buy, sell, buy_reset_marker, sell_reset_marker
+            FROM ymshop_shop_player_stats
+            WHERE shop_id = ? AND player_id = ? AND entry_id = ?
+            FOR UPDATE
+            """.trimIndent()
+        ).use { statement ->
+            statement.setString(1, shopId)
+            statement.setString(2, playerId.toString())
+            statement.setString(3, entryId)
+            statement.executeQuery().use { result ->
+                check(result.next()) { "Missing player stats row after insert" }
+                return MutableStatsRow(
+                    total = result.getLong("total"),
+                    buy = result.getLong("buy"),
+                    sell = result.getLong("sell"),
+                    buyResetMarker = result.getLong("buy_reset_marker"),
+                    sellResetMarker = result.getLong("sell_reset_marker")
+                )
+            }
+        }
+    }
+
+    private fun selectGlobalStatsForUpdate(connection: Connection, shopId: String, entryId: String): MutableStatsRow {
+        connection.prepareStatement(
+            """
+            SELECT total, buy, sell, buy_reset_marker, sell_reset_marker
+            FROM ymshop_shop_global_stats
+            WHERE shop_id = ? AND entry_id = ?
+            FOR UPDATE
+            """.trimIndent()
+        ).use { statement ->
+            statement.setString(1, shopId)
+            statement.setString(2, entryId)
+            statement.executeQuery().use { result ->
+                check(result.next()) { "Missing global stats row after insert" }
+                return MutableStatsRow(
+                    total = result.getLong("total"),
+                    buy = result.getLong("buy"),
+                    sell = result.getLong("sell"),
+                    buyResetMarker = result.getLong("buy_reset_marker"),
+                    sellResetMarker = result.getLong("sell_reset_marker")
+                )
+            }
+        }
+    }
+
+    private fun updatePlayerStats(
+        connection: Connection,
+        shopId: String,
+        entryId: String,
+        playerId: UUID,
+        row: MutableStatsRow
+    ) {
+        connection.prepareStatement(
+            """
+            UPDATE ymshop_shop_player_stats
+            SET total = ?, buy = ?, sell = ?, buy_reset_marker = ?, sell_reset_marker = ?
+            WHERE shop_id = ? AND player_id = ? AND entry_id = ?
+            """.trimIndent()
+        ).use { statement ->
+            statement.setLong(1, row.total)
+            statement.setLong(2, row.buy)
+            statement.setLong(3, row.sell)
+            statement.setLong(4, row.buyResetMarker)
+            statement.setLong(5, row.sellResetMarker)
+            statement.setString(6, shopId)
+            statement.setString(7, playerId.toString())
+            statement.setString(8, entryId)
+            check(statement.executeUpdate() == 1) { "Failed to update player stats row" }
+        }
+    }
+
+    private fun updateGlobalStats(connection: Connection, shopId: String, entryId: String, row: MutableStatsRow) {
+        connection.prepareStatement(
+            """
+            UPDATE ymshop_shop_global_stats
+            SET total = ?, buy = ?, sell = ?, buy_reset_marker = ?, sell_reset_marker = ?
+            WHERE shop_id = ? AND entry_id = ?
+            """.trimIndent()
+        ).use { statement ->
+            statement.setLong(1, row.total)
+            statement.setLong(2, row.buy)
+            statement.setLong(3, row.sell)
+            statement.setLong(4, row.buyResetMarker)
+            statement.setLong(5, row.sellResetMarker)
+            statement.setString(6, shopId)
+            statement.setString(7, entryId)
+            check(statement.executeUpdate() == 1) { "Failed to update global stats row" }
+        }
+    }
+
+    private fun applyResetPolicies(row: MutableStatsRow, limits: TradeLimitRules, now: Instant, zoneId: ZoneId) {
+        ShopResetSupport.currentMarker(limits.buyResetPolicy, now, zoneId)?.let { marker ->
+            when (ShopResetSupport.resolveScopeAction(row.buyResetMarker, marker, row.buy)) {
+                ResetScopeAction.NONE -> Unit
+                ResetScopeAction.MARK_ONLY -> row.buyResetMarker = marker
+                ResetScopeAction.RESET_AND_MARK -> {
+                    row.buy = 0L
+                    row.buyResetMarker = marker
+                }
+            }
+        }
+        ShopResetSupport.currentMarker(limits.sellResetPolicy, now, zoneId)?.let { marker ->
+            when (ShopResetSupport.resolveScopeAction(row.sellResetMarker, marker, row.sell)) {
+                ResetScopeAction.NONE -> Unit
+                ResetScopeAction.MARK_ONLY -> row.sellResetMarker = marker
+                ResetScopeAction.RESET_AND_MARK -> {
+                    row.sell = 0L
+                    row.sellResetMarker = marker
+                }
+            }
+        }
+    }
+
+    private fun limitExceeded(next: Long, limit: Long?, messageKey: String): AtomicShopStatsResult.LimitExceeded? {
+        if (limit == null || limit < 0 || next <= limit) {
+            return null
+        }
+        return AtomicShopStatsResult.LimitExceeded(messageKey, limit)
+    }
+
     private fun withConnection(block: (Connection) -> Unit) {
         dataSource.connection.use(block)
     }
@@ -325,4 +662,12 @@ class SqlPlayerDataBackend(
             DatabaseType.YAML -> error("YAML backend does not use JDBC")
         }
     }
+
+    private data class MutableStatsRow(
+        var total: Long,
+        var buy: Long,
+        var sell: Long,
+        var buyResetMarker: Long,
+        var sellResetMarker: Long
+    )
 }

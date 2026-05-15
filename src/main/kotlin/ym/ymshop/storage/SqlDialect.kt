@@ -6,6 +6,8 @@ interface SqlDialect {
     val upsertDailyTradeSql: String
     val upsertPlayerStatsSql: String
     val upsertGlobalStatsSql: String
+    val insertPlayerStatsIfAbsentSql: String
+    val insertGlobalStatsIfAbsentSql: String
 
     companion object {
         fun from(type: DatabaseType): SqlDialect {
@@ -102,6 +104,20 @@ private object MysqlDialect : SqlDialect {
             buy_reset_marker = VALUES(buy_reset_marker),
             sell_reset_marker = VALUES(sell_reset_marker)
         """.trimIndent()
+
+    override val insertPlayerStatsIfAbsentSql: String =
+        """
+        INSERT IGNORE INTO ymshop_shop_player_stats
+            (shop_id, player_id, entry_id, total, buy, sell, buy_reset_marker, sell_reset_marker)
+        VALUES (?, ?, ?, 0, 0, 0, 0, 0)
+        """.trimIndent()
+
+    override val insertGlobalStatsIfAbsentSql: String =
+        """
+        INSERT IGNORE INTO ymshop_shop_global_stats
+            (shop_id, entry_id, total, buy, sell, buy_reset_marker, sell_reset_marker)
+        VALUES (?, ?, 0, 0, 0, 0, 0)
+        """.trimIndent()
 }
 
 private object PostgresqlDialect : SqlDialect {
@@ -187,5 +203,21 @@ private object PostgresqlDialect : SqlDialect {
             sell = EXCLUDED.sell,
             buy_reset_marker = EXCLUDED.buy_reset_marker,
             sell_reset_marker = EXCLUDED.sell_reset_marker
+        """.trimIndent()
+
+    override val insertPlayerStatsIfAbsentSql: String =
+        """
+        INSERT INTO ymshop_shop_player_stats
+            (shop_id, player_id, entry_id, total, buy, sell, buy_reset_marker, sell_reset_marker)
+        VALUES (?, ?, ?, 0, 0, 0, 0, 0)
+        ON CONFLICT (shop_id, player_id, entry_id) DO NOTHING
+        """.trimIndent()
+
+    override val insertGlobalStatsIfAbsentSql: String =
+        """
+        INSERT INTO ymshop_shop_global_stats
+            (shop_id, entry_id, total, buy, sell, buy_reset_marker, sell_reset_marker)
+        VALUES (?, ?, 0, 0, 0, 0, 0)
+        ON CONFLICT (shop_id, entry_id) DO NOTHING
         """.trimIndent()
 }

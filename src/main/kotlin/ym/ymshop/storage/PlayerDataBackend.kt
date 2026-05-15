@@ -1,5 +1,8 @@
 package ym.ymshop.storage
 
+import ym.ymshop.model.TradeLimitRules
+import ym.ymshop.model.TradeReservation
+import ym.ymshop.model.TradeSide
 import java.util.UUID
 
 interface FavoriteRepository {
@@ -30,6 +33,26 @@ interface ShopStatsRepository {
         dirtyPlayerKeys: Set<ShopPlayerStatsKey>,
         dirtyGlobalEntryIds: Set<String>
     ): Boolean
+
+    val supportsAtomicShopStats: Boolean
+        get() = false
+
+    fun reserveShopTradeStats(
+        shopId: String,
+        entryId: String,
+        playerId: UUID,
+        side: TradeSide,
+        amount: Int,
+        limits: TradeLimitRules,
+        nowMillis: Long,
+        zoneId: java.time.ZoneId
+    ): AtomicShopStatsResult {
+        return AtomicShopStatsResult.Unavailable
+    }
+
+    fun rollbackShopTradeStats(reservation: TradeReservation): Boolean {
+        return false
+    }
 }
 
 interface PlayerDataBackend : FavoriteRepository, DailyTradeRepository, ShopStatsRepository {
@@ -49,4 +72,22 @@ interface PlayerDataBackend : FavoriteRepository, DailyTradeRepository, ShopStat
         flush()
         return true
     }
+}
+
+sealed class AtomicShopStatsResult {
+    data class Reserved(
+        val reservation: TradeReservation,
+        val stats: ym.ymshop.model.EntryStats
+    ) : AtomicShopStatsResult()
+
+    data class LimitExceeded(
+        val messageKey: String,
+        val limit: Long
+    ) : AtomicShopStatsResult()
+
+    data class Failed(
+        val message: String
+    ) : AtomicShopStatsResult()
+
+    data object Unavailable : AtomicShopStatsResult()
 }

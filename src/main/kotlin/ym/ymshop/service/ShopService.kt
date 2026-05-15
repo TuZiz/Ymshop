@@ -14,9 +14,12 @@ import ym.ymshop.model.ShopDefinition
 import ym.ymshop.model.ShopEntry
 import ym.ymshop.model.TradeClickAmountDefinition
 import ym.ymshop.model.TradeClickAmountMode
+import ym.ymshop.model.TradeLimitRules
 import ym.ymshop.model.TradeMode
+import ym.ymshop.model.TradeReservation
 import ym.ymshop.model.TradeResult
 import ym.ymshop.model.TradeSide
+import ym.ymshop.storage.AtomicShopStatsResult
 import ym.ymshop.storage.PlayerDataBackend
 import ym.ymshop.util.prettifyMaterialName
 import java.time.DayOfWeek
@@ -264,7 +267,10 @@ class ShopService(
         return tradeLocks.withEntryLock(shop.id, entry.id) {
             val currency = currency(entry.currencyId)
             val store = store(shop.id)
-            refreshResets(shop, entry, player.uniqueId)
+            val atomicStats = playerDataBackend.supportsAtomicShopStats
+            if (!atomicStats) {
+                refreshResets(shop, entry, player.uniqueId)
+            }
             val stats = store.stats(entry.id, player.uniqueId)
             val safeMultiplier = multiplier.coerceAtLeast(1)
             val configuredItem = tradeItem(entry, side)
@@ -292,36 +298,69 @@ class ShopService(
                 return@withEntryLock resourceCheck
             }
 
-            checkLimits(entry, stats, quantity, player, side)?.let { return@withEntryLock it }
+            val reservation = if (atomicStats) {
+                when (val reserved = reserveAtomicTradeStats(shop, entry, player, side, quantity)) {
+                    is AtomicShopStatsResult.Reserved -> reserved.reservation
+                    is AtomicShopStatsResult.LimitExceeded -> {
+                        return@withEntryLock TradeResult(
+                            false,
+                            reserved.messageKey,
+                            replacements + mapOf("limit" to reserved.limit.toString())
+                        )
+                    }
+                    is AtomicShopStatsResult.Failed -> {
+                        plugin.logger.severe(
+                            "Ymshop SQL atomic stats reservation failed for ${shop.id}/${entry.id}: ${reserved.message}"
+                        )
+                        return@withEntryLock TradeResult(false, "trade-persistence-failed", replacements)
+                    }
+                    AtomicShopStatsResult.Unavailable -> {
+                        return@withEntryLock TradeResult(false, "trade-persistence-failed", replacements)
+                    }
+                }
+            } else {
+                checkLimits(entry, stats, quantity, player, side)?.let { return@withEntryLock it }
+                null
+            }
 
             val result = when (side) {
                 TradeSide.BUY -> executeBuy(player, shop, entry, currency, totalPrice, quantity, replacements)
                 TradeSide.SELL -> executeSell(player, shop, entry, currency, totalPrice, quantity, replacements)
             }
             if (!result.success) {
+                reservation?.let { rollbackAtomicTradeStats(it, player, shop, entry, currency, totalPrice, quantity, side) }
                 return@withEntryLock result
             }
 
-            val strictPersistence = shop.settings.strictPersistence && playerDataBackend.settings.isSql
-            val statsPersisted = store.record(
-                entry.id,
-                player.uniqueId,
-                if (side == TradeSide.BUY) TradeMode.BUY else TradeMode.SELL,
-                quantity,
-                waitForPersistence = strictPersistence
-            )
-            if (!statsPersisted) {
-                logCompensation(
-                    player = player,
-                    shop = shop,
-                    entry = entry,
-                    side = side,
-                    amount = quantity,
-                    currency = currency,
-                    totalPrice = totalPrice,
-                    reason = "strict stats persistence failed after successful trade"
+            if (atomicStats) {
+                store.record(
+                    entry.id,
+                    player.uniqueId,
+                    if (side == TradeSide.BUY) TradeMode.BUY else TradeMode.SELL,
+                    quantity,
+                    waitForPersistence = false
                 )
-                return@withEntryLock TradeResult(false, "trade-persistence-failed", replacements)
+            } else {
+                val statsPersisted = store.record(
+                    entry.id,
+                    player.uniqueId,
+                    if (side == TradeSide.BUY) TradeMode.BUY else TradeMode.SELL,
+                    quantity,
+                    waitForPersistence = shop.settings.strictPersistence
+                )
+                if (!statsPersisted) {
+                    logCompensation(
+                        player = player,
+                        shop = shop,
+                        entry = entry,
+                        side = side,
+                        amount = quantity,
+                        currency = currency,
+                        totalPrice = totalPrice,
+                        reason = "stats persistence failed after successful single-server trade"
+                    )
+                    return@withEntryLock TradeResult(false, "trade-persistence-failed", replacements)
+                }
             }
             dailyTradeStore.record(player.uniqueId, LocalDate.now(zoneId), currency.id, side, totalPrice)
             logTrade(player, shop, entry, side, quantity, unitPrice(entry, side), totalPrice, currency)
@@ -542,6 +581,58 @@ class ShopService(
             return TradeResult(false, "limit-sell", mapOf("limit" to entry.limits.sellGlobal.toString()))
         }
         return null
+    }
+
+    private fun reserveAtomicTradeStats(
+        shop: ShopDefinition,
+        entry: ShopEntry,
+        player: Player,
+        side: TradeSide,
+        amount: Int
+    ): AtomicShopStatsResult {
+        return playerDataBackend.reserveShopTradeStats(
+            shopId = shop.id,
+            entryId = entry.id,
+            playerId = player.uniqueId,
+            side = side,
+            amount = amount,
+            limits = TradeLimitRules(
+                playerLimit = entry.limits.player,
+                globalLimit = entry.limits.global,
+                buyLimit = effectiveLimit(entry.limits.buy, entry.buyPermissionLimits, player),
+                sellLimit = effectiveLimit(entry.limits.sell, entry.sellPermissionLimits, player),
+                buyGlobalLimit = entry.limits.buyGlobal,
+                sellGlobalLimit = entry.limits.sellGlobal,
+                buyResetPolicy = entry.buyResetPolicy,
+                sellResetPolicy = entry.sellResetPolicy
+            ),
+            nowMillis = Instant.now().toEpochMilli(),
+            zoneId = zoneId
+        )
+    }
+
+    private fun rollbackAtomicTradeStats(
+        reservation: TradeReservation,
+        player: Player,
+        shop: ShopDefinition,
+        entry: ShopEntry,
+        currency: CurrencyDefinition,
+        totalPrice: Long,
+        amount: Int,
+        side: TradeSide
+    ) {
+        if (!playerDataBackend.rollbackShopTradeStats(reservation)) {
+            logCompensation(
+                player = player,
+                shop = shop,
+                entry = entry,
+                side = side,
+                amount = amount,
+                currency = currency,
+                totalPrice = totalPrice,
+                reason = "trade failed after SQL atomic stats reservation; stats rollback failed"
+            )
+        }
     }
 
     fun createEntryRenderSnapshot(
@@ -1061,6 +1152,9 @@ class ShopService(
     }
 
     private fun validateShop(shop: ShopDefinition, config: GlobalConfig = globalConfig) {
+        require(!shop.settings.strictPersistence || playerDataBackend.settings.isSql) {
+            "${shop.sourceFile} -> settings.strict-persistence requires database.type mysql or postgresql"
+        }
         require(shop.entries.map { it.id.lowercase() }.distinct().size == shop.entries.size) {
             "${shop.sourceFile} -> duplicate entry ids"
         }

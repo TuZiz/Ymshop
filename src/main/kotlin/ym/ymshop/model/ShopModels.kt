@@ -1,6 +1,8 @@
 package ym.ymshop.model
 
 import java.time.ZoneId
+import java.time.Instant
+import java.util.UUID
 
 enum class TradeMode {
     BUY,
@@ -63,6 +65,30 @@ data class EntryLimits(
     val sell: Long? = null,
     val buyGlobal: Long? = null,
     val sellGlobal: Long? = null
+)
+
+data class TradeLimitRules(
+    val playerLimit: Long? = null,
+    val globalLimit: Long? = null,
+    val buyLimit: Long? = null,
+    val sellLimit: Long? = null,
+    val buyGlobalLimit: Long? = null,
+    val sellGlobalLimit: Long? = null,
+    val buyResetPolicy: ResetPolicy = ResetPolicy(),
+    val sellResetPolicy: ResetPolicy = ResetPolicy()
+)
+
+data class TradeReservation(
+    val shopId: String,
+    val entryId: String,
+    val playerId: UUID,
+    val side: TradeSide,
+    val amount: Int,
+    val playerBuyResetMarker: Long,
+    val playerSellResetMarker: Long,
+    val globalBuyResetMarker: Long,
+    val globalSellResetMarker: Long,
+    val reservedAt: Instant
 )
 
 data class PermissionLimit(

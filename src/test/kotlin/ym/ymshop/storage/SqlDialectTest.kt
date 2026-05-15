@@ -12,6 +12,8 @@ class SqlDialectTest {
         assertTrue(dialect.upsertDailyTradeSql.contains("ON DUPLICATE KEY UPDATE"))
         assertTrue(dialect.upsertPlayerStatsSql.contains("ON DUPLICATE KEY UPDATE"))
         assertTrue(dialect.upsertGlobalStatsSql.contains("ON DUPLICATE KEY UPDATE"))
+        assertTrue(dialect.insertPlayerStatsIfAbsentSql.contains("INSERT IGNORE"))
+        assertTrue(dialect.insertGlobalStatsIfAbsentSql.contains("INSERT IGNORE"))
     }
 
     @Test
@@ -21,5 +23,7 @@ class SqlDialectTest {
         assertTrue(dialect.upsertDailyTradeSql.contains("ON CONFLICT"))
         assertTrue(dialect.upsertPlayerStatsSql.contains("ON CONFLICT"))
         assertTrue(dialect.upsertGlobalStatsSql.contains("ON CONFLICT"))
+        assertTrue(dialect.insertPlayerStatsIfAbsentSql.contains("DO NOTHING"))
+        assertTrue(dialect.insertGlobalStatsIfAbsentSql.contains("DO NOTHING"))
     }
 }
