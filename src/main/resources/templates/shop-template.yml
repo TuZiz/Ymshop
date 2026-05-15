@@ -1,0 +1,49 @@
+settings:
+  menu: your-layout-id
+  buy-more: true
+  shop-name: "&6你的商店"
+  hide-message: false
+  # 可自定义四种点击的买卖数量；支持正整数、sell.shift-right: all、或 none/disabled
+  trade-amounts:
+    buy:
+      left: 1
+      right: 1
+      shift-left: 64
+      shift-right: none
+    sell:
+      left: 1
+      right: 1
+      shift-left: 64
+      shift-right: all
+
+items:
+  example_item:
+    # 这个 key 只是商品 id，不需要和布局字符一一对应
+    display-name: "&e示例物品"
+    currency: vault
+    buy-price: 100
+    sell-price: 50
+    products:
+      1:
+        material: DIAMOND
+        amount: 1
+    buy-limits:
+      global: 1000
+      default: 64
+    sell-limits:
+      global: 1000
+      default: 64
+    buy-times-reset-mode: TIMED
+    buy-times-reset-time: "00:00:00"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  second_item:
+    display-name: "&b第二个商品"
+    currency: vault
+    buy-price: 30
+    sell-price: 15
+    products:
+      1:
+        material: EMERALD
+        amount: 1

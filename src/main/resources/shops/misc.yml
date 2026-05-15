@@ -1,0 +1,389 @@
+settings:
+  menu: category-shop-menu
+  buy-more: true
+  shop-name: "&5怪物掉落与酿造商店"
+  hide-message: false
+
+items:
+  01_nether_star:
+    display-name: "&4&l下界之星"
+    lore:
+      - "&7强大的下界怪物掉落物"
+      - "&7用于制作信标"
+    currency: vault
+    sell-price: 700
+    products:
+      1:
+        material: NETHER_STAR
+        amount: 1
+    sell-limits:
+      global: 66
+      default: 1
+      vip: 2
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  02_bone:
+    display-name: "&f骨头"
+    currency: vault
+    sell-price: 2
+    products:
+      1:
+        material: BONE
+        amount: 1
+    sell-limits:
+      global: 960
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  03_ghast_tear:
+    display-name: "&d&l恶魂之泪"
+    currency: vault
+    sell-price: 16
+    products:
+      1:
+        material: GHAST_TEAR
+        amount: 1
+    sell-limits:
+      global: 240
+      default: 32
+      vip: 48
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  04_shulker_shell:
+    display-name: "&5&l潜影壳"
+    currency: vault
+    sell-price: 20
+    products:
+      1:
+        material: SHULKER_SHELL
+        amount: 1
+    sell-limits:
+      global: 120
+      default: 10
+      vip: 15
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  05_blaze_rod:
+    display-name: "&6烈焰棒"
+    currency: vault
+    sell-price: 12
+    products:
+      1:
+        material: BLAZE_ROD
+        amount: 1
+    sell-limits:
+      global: 240
+      default: 48
+      vip: 72
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  06_ender_pearl:
+    display-name: "&5末影珍珠"
+    currency: vault
+    sell-price: 6
+    products:
+      1:
+        material: ENDER_PEARL
+        amount: 1
+    sell-limits:
+      global: 999
+      default: 96
+      vip: 144
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  07_magma_cream:
+    display-name: "&c&l岩浆膏"
+    currency: vault
+    sell-price: 9
+    products:
+      1:
+        material: MAGMA_CREAM
+        amount: 1
+    sell-limits:
+      global: 240
+      default: 48
+      vip: 72
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  08_prismarine_crystals:
+    display-name: "&b海晶石"
+    currency: vault
+    sell-price: 6
+    products:
+      1:
+        material: PRISMARINE_CRYSTALS
+        amount: 1
+    sell-limits:
+      global: 480
+      default: 96
+      vip: 144
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  09_blaze_powder:
+    display-name: "&e烈焰粉"
+    currency: vault
+    sell-price: 6
+    products:
+      1:
+        material: BLAZE_POWDER
+        amount: 1
+    sell-limits:
+      global: 480
+      default: 96
+      vip: 144
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  10_rabbit_foot:
+    display-name: "&e兔子脚"
+    currency: vault
+    sell-price: 6
+    products:
+      1:
+        material: RABBIT_FOOT
+        amount: 1
+    sell-limits:
+      global: 240
+      default: 32
+      vip: 48
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  11_prismarine_shard:
+    display-name: "&8海晶石碎片"
+    currency: vault
+    sell-price: 4
+    products:
+      1:
+        material: PRISMARINE_SHARD
+        amount: 1
+    sell-limits:
+      global: 480
+      default: 96
+      vip: 144
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  12_gunpowder:
+    display-name: "&7火药"
+    currency: vault
+    sell-price: 4
+    products:
+      1:
+        material: GUNPOWDER
+        amount: 1
+    sell-limits:
+      global: 480
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  13_slime_ball:
+    display-name: "&a史莱姆球"
+    currency: vault
+    sell-price: 4
+    products:
+      1:
+        material: SLIME_BALL
+        amount: 1
+    sell-limits:
+      global: 480
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  14_fermented_spider_eye:
+    display-name: "&8发酵蛛眼"
+    currency: vault
+    sell-price: 2
+    products:
+      1:
+        material: FERMENTED_SPIDER_EYE
+        amount: 1
+    sell-limits:
+      global: 960
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  15_string:
+    display-name: "&f线"
+    currency: vault
+    sell-price: 2
+    products:
+      1:
+        material: STRING
+        amount: 1
+    sell-limits:
+      global: 960
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  16_arrow:
+    display-name: "&7箭"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: ARROW
+        amount: 1
+    sell-limits:
+      global: 960
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  17_soul_sand:
+    display-name: "&8灵魂沙"
+    currency: vault
+    sell-price: 2
+    products:
+      1:
+        material: SOUL_SAND
+        amount: 1
+    sell-limits:
+      global: 960
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  18_spider_eye:
+    display-name: "&8蜘蛛眼"
+    currency: vault
+    sell-price: 2
+    products:
+      1:
+        material: SPIDER_EYE
+        amount: 1
+    sell-limits:
+      global: 960
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  19_rotten_flesh:
+    display-name: "&2腐肉"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: ROTTEN_FLESH
+        amount: 1
+    sell-limits:
+      global: 1920
+      default: 256
+      vip: 384
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"

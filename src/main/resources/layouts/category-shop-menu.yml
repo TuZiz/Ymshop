@@ -1,0 +1,63 @@
+title: "&#00BFFF&l✨ &#00E5FF{shop-name} &#00BFFF&l✨"
+size: 54
+
+open-actions:
+  1:
+    type: sound
+    sound: item.book.page_turn
+
+layout:
+  - "000000000"
+  - "0ABCDEFG0"
+  - "0HIJKLMN0"
+  - "0OPQRSTU0"
+  - "0VWXYZab0"
+  - "400030005"
+
+buttons:
+  "3":
+    display-item:
+      material: DARK_OAK_DOOR # 使用深色橡木门代替箭头，更符合“返回/退出”的语义
+      amount: 1
+      name: "&#FF4B4B&l⭐ 返回首页 ⭐"
+      lore:
+        - ""
+        - "&#E0E0E0▶ 点击返回主菜单"
+    actions:
+      1:
+        type: open_menu
+        menu: main
+
+  "4":
+    display-item:
+      material: SPECTRAL_ARROW
+      amount: 1
+      name: "&#FFD700&l◀ 上一页"
+      lore:
+        - ""
+        - "&#808080当前进度: &#00BFFF{current_page} &#808080/ &#00BFFF{total_pages}"
+        - ""
+        - "&#E0E0E0▶ 点击向前翻页"
+    actions:
+      1:
+        type: previous_page
+
+  "5":
+    display-item:
+      material: ARROW
+      amount: 1
+      name: "&#FFD700&l下一页 ▶"
+      lore:
+        - ""
+        - "&#808080当前进度: &#00BFFF{current_page} &#808080/ &#00BFFF{total_pages}"
+        - ""
+        - "&#E0E0E0▶ 点击向后翻页"
+    actions:
+      1:
+        type: next_page
+
+  "0":
+    display-item:
+      material: BLACK_STAINED_GLASS_PANE # 换成黑色或灰色玻璃，视觉上更沉稳，不会喧宾夺主
+      amount: 1
+      name: "&f" # 留空名称，玩家鼠标放上去不会显示难看的“分割线”字样

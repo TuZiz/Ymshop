@@ -1,0 +1,458 @@
+settings:
+  menu: category-shop-menu
+  buy-more: true
+  shop-name: "&7矿物与锭类商店"
+  hide-message: false
+
+items:
+  01_coal_ore:
+    display-name: "&0煤矿石"
+    currency: vault
+    sell-price: 4
+    products:
+      1:
+        material: COAL_ORE
+        amount: 1
+    sell-limits:
+      default: 192
+      vip: 288
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  02_iron_ore:
+    display-name: "&f铁矿石"
+    currency: vault
+    sell-price: 9
+    products:
+      1:
+        material: IRON_ORE
+        amount: 1
+    sell-limits:
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  03_gold_ore:
+    display-name: "&6金矿石"
+    currency: vault
+    sell-price: 16
+    products:
+      1:
+        material: GOLD_ORE
+        amount: 1
+    sell-limits:
+      default: 72
+      vip: 108
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  04_diamond_ore:
+    display-name: "&b钻石矿石"
+    currency: vault
+    sell-price: 32
+    products:
+      1:
+        material: DIAMOND_ORE
+        amount: 1
+    sell-limits:
+      default: 36
+      vip: 54
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  05_emerald_ore:
+    display-name: "&a绿宝石矿石"
+    currency: vault
+    sell-price: 36
+    products:
+      1:
+        material: EMERALD_ORE
+        amount: 1
+    sell-limits:
+      default: 24
+      vip: 36
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  06_redstone_ore:
+    display-name: "&c红石矿石"
+    currency: vault
+    sell-price: 6
+    products:
+      1:
+        material: REDSTONE_ORE
+        amount: 1
+    sell-limits:
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  07_lapis_ore:
+    display-name: "&9青金石矿石"
+    currency: vault
+    sell-price: 5
+    products:
+      1:
+        material: LAPIS_ORE
+        amount: 1
+    sell-limits:
+      default: 96
+      vip: 144
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  08_copper_ore:
+    display-name: "&3铜矿石"
+    currency: vault
+    sell-price: 5
+    products:
+      1:
+        material: COPPER_ORE
+        amount: 1
+    sell-limits:
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  09_deepslate_coal_ore:
+    display-name: "&0深层煤矿石"
+    currency: vault
+    sell-price: 5
+    products:
+      1:
+        material: DEEPSLATE_COAL_ORE
+        amount: 1
+    sell-limits:
+      default: 256
+      vip: 384
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  10_deepslate_iron_ore:
+    display-name: "&f深层铁矿石"
+    currency: vault
+    sell-price: 10
+    products:
+      1:
+        material: DEEPSLATE_IRON_ORE
+        amount: 1
+    sell-limits:
+      default: 192
+      vip: 288
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  11_deepslate_gold_ore:
+    display-name: "&6深层金矿石"
+    currency: vault
+    sell-price: 18
+    products:
+      1:
+        material: DEEPSLATE_GOLD_ORE
+        amount: 1
+    sell-limits:
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  12_deepslate_diamond_ore:
+    display-name: "&b深层钻石矿石"
+    currency: vault
+    sell-price: 36
+    products:
+      1:
+        material: DEEPSLATE_DIAMOND_ORE
+        amount: 1
+    sell-limits:
+      default: 48
+      vip: 72
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  13_deepslate_emerald_ore:
+    display-name: "&a深层绿宝石矿石"
+    currency: vault
+    sell-price: 40
+    products:
+      1:
+        material: DEEPSLATE_EMERALD_ORE
+        amount: 1
+    sell-limits:
+      default: 32
+      vip: 48
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  14_deepslate_redstone_ore:
+    display-name: "&c深层红石矿石"
+    currency: vault
+    sell-price: 7
+    products:
+      1:
+        material: DEEPSLATE_REDSTONE_ORE
+        amount: 1
+    sell-limits:
+      default: 192
+      vip: 288
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  15_deepslate_lapis_ore:
+    display-name: "&9深层青金石矿石"
+    currency: vault
+    sell-price: 6
+    products:
+      1:
+        material: DEEPSLATE_LAPIS_ORE
+        amount: 1
+    sell-limits:
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  16_deepslate_copper_ore:
+    display-name: "&3深层铜矿石"
+    currency: vault
+    sell-price: 6
+    products:
+      1:
+        material: DEEPSLATE_COPPER_ORE
+        amount: 1
+    sell-limits:
+      default: 224
+      vip: 320
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  17_iron_ingot:
+    display-name: "&f铁锭"
+    currency: vault
+    buy-price: 9
+    sell-price: 6
+    products:
+      1:
+        material: IRON_INGOT
+        amount: 1
+    sell-limits:
+      global: 2200
+      default: 64
+      vip: 96
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  18_gold_ingot:
+    display-name: "&6金锭"
+    currency: vault
+    buy-price: 20
+    sell-price: 12
+    products:
+      1:
+        material: GOLD_INGOT
+        amount: 1
+    sell-limits:
+      global: 1600
+      default: 48
+      vip: 72
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  19_emerald:
+    display-name: "&a绿宝石"
+    currency: vault
+    buy-price: 30
+    sell-price: 18
+    products:
+      1:
+        material: EMERALD
+        amount: 1
+    sell-limits:
+      global: 1000
+      default: 24
+      vip: 36
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  20_lapis_lazuli:
+    display-name: "&9青金石"
+    currency: vault
+    buy-price: 5
+    sell-price: 2
+    products:
+      1:
+        material: LAPIS_LAZULI
+        amount: 1
+    sell-limits:
+      global: 2200
+      default: 96
+      vip: 144
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  21_redstone:
+    display-name: "&c红石粉"
+    currency: vault
+    buy-price: 5
+    sell-price: 2
+    products:
+      1:
+        material: REDSTONE
+        amount: 1
+    sell-limits:
+      global: 2200
+      default: 96
+      vip: 144
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  22_diamond:
+    display-name: "&b钻石"
+    currency: vault
+    buy-price: 36
+    sell-price: 22
+    products:
+      1:
+        material: DIAMOND
+        amount: 1
+    sell-limits:
+      global: 1400
+      default: 28
+      vip: 42
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  23_anvil:
+    display-name: "&7铁砧"
+    lore:
+      - "&7可用于修复和重命名物品"
+    currency: vault
+    sell-price: 80
+    products:
+      1:
+        material: ANVIL
+        amount: 1
+    sell-limits:
+      global: 200
+      default: 2
+      vip: 3
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"

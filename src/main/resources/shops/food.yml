@@ -1,0 +1,150 @@
+settings:
+  menu: category-shop-menu
+  buy-more: true
+  shop-name: "&6熟食与补给商店"
+  hide-message: false
+
+items:
+  01_baked_potato:
+    display-name: "&6烤马铃薯"
+    currency: vault
+    buy-price: 12
+    products:
+      1:
+        material: BAKED_POTATO
+        amount: 1
+
+  02_pumpkin_pie:
+    display-name: "&6南瓜派"
+    currency: vault
+    buy-price: 14
+    products:
+      1:
+        material: PUMPKIN_PIE
+        amount: 1
+
+  03_cooked_chicken:
+    display-name: "&6熟鸡肉"
+    currency: vault
+    buy-price: 16
+    products:
+      1:
+        material: COOKED_CHICKEN
+        amount: 1
+
+  04_cooked_beef:
+    display-name: "&6熟牛排"
+    currency: vault
+    buy-price: 18
+    products:
+      1:
+        material: COOKED_BEEF
+        amount: 1
+
+  05_cooked_porkchop:
+    display-name: "&6熟猪排"
+    currency: vault
+    buy-price: 16
+    products:
+      1:
+        material: COOKED_PORKCHOP
+        amount: 1
+
+  06_cooked_cod:
+    display-name: "&b熟鳕鱼"
+    currency: vault
+    buy-price: 10
+    products:
+      1:
+        material: COOKED_COD
+        amount: 1
+
+  07_cake:
+    display-name: "&d蛋糕"
+    currency: vault
+    buy-price: 30
+    products:
+      1:
+        material: CAKE
+        amount: 1
+
+  08_mushroom_stew:
+    display-name: "&6蘑菇煲"
+    currency: vault
+    buy-price: 18
+    products:
+      1:
+        material: MUSHROOM_STEW
+        amount: 1
+
+  09_cooked_mutton:
+    display-name: "&6熟羊排"
+    currency: vault
+    buy-price: 16
+    products:
+      1:
+        material: COOKED_MUTTON
+        amount: 1
+
+  10_cooked_rabbit:
+    display-name: "&6熟兔肉"
+    currency: vault
+    buy-price: 14
+    products:
+      1:
+        material: COOKED_RABBIT
+        amount: 1
+
+  11_honey_bottle:
+    display-name: "&e蜂蜜瓶"
+    currency: vault
+    buy-price: 22
+    products:
+      1:
+        material: HONEY_BOTTLE
+        amount: 1
+
+  12_golden_carrot:
+    display-name: "&6金胡萝卜"
+    currency: vault
+    buy-price: 48
+    products:
+      1:
+        material: GOLDEN_CARROT
+        amount: 1
+
+  13_golden_apple:
+    display-name: "&6金苹果"
+    currency: vault
+    buy-price: 96
+    products:
+      1:
+        material: GOLDEN_APPLE
+        amount: 1
+
+  14_rabbit_stew:
+    display-name: "&6兔肉煲"
+    currency: vault
+    buy-price: 24
+    products:
+      1:
+        material: RABBIT_STEW
+        amount: 1
+
+  15_bread:
+    display-name: "&6面包"
+    currency: vault
+    buy-price: 16
+    products:
+      1:
+        material: BREAD
+        amount: 1
+
+  16_cookie:
+    display-name: "&6饼干"
+    currency: vault
+    buy-price: 8
+    products:
+      1:
+        material: COOKIE
+        amount: 1

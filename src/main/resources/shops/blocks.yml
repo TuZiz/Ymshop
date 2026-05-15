@@ -1,0 +1,350 @@
+settings:
+  menu: category-shop-menu
+  buy-more: true
+  shop-name: "&c建材与装饰商店"
+  hide-message: false
+
+items:
+  01_oak_log:
+    display-name: "&6橡木原木"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: OAK_LOG
+        amount: 1
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  02_spruce_log:
+    display-name: "&e云杉原木"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: SPRUCE_LOG
+        amount: 1
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  03_birch_log:
+    display-name: "&f白桦原木"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: BIRCH_LOG
+        amount: 1
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  04_jungle_log:
+    display-name: "&d丛林原木"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: JUNGLE_LOG
+        amount: 1
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  05_acacia_log:
+    display-name: "&c金合欢原木"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: ACACIA_LOG
+        amount: 1
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  06_dark_oak_log:
+    display-name: "&8深色橡木原木"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: DARK_OAK_LOG
+        amount: 1
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  07_mangrove_log:
+    display-name: "&4红树原木"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: MANGROVE_LOG
+        amount: 1
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  08_cherry_log:
+    display-name: "&d樱花原木"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: CHERRY_LOG
+        amount: 1
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  09_crimson_stem:
+    display-name: "&5绯红菌柄"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: CRIMSON_STEM
+        amount: 1
+    sell-limits:
+      global: 512
+      default: 64
+      vip: 96
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  10_warped_stem:
+    display-name: "&3诡异菌柄"
+    currency: vault
+    sell-price: 1
+    products:
+      1:
+        material: WARPED_STEM
+        amount: 1
+    sell-limits:
+      global: 512
+      default: 64
+      vip: 96
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  11_poppy:
+    display-name: "&c虞美人"
+    currency: vault
+    buy-price: 4
+    products:
+      1:
+        material: POPPY
+        amount: 1
+
+  12_dandelion:
+    display-name: "&e蒲公英"
+    currency: vault
+    buy-price: 4
+    products:
+      1:
+        material: DANDELION
+        amount: 1
+
+  13_white_tulip:
+    display-name: "&f白色郁金香"
+    currency: vault
+    buy-price: 4
+    products:
+      1:
+        material: WHITE_TULIP
+        amount: 1
+
+  14_orange_tulip:
+    display-name: "&6橙色郁金香"
+    currency: vault
+    buy-price: 4
+    products:
+      1:
+        material: ORANGE_TULIP
+        amount: 1
+
+  15_pink_tulip:
+    display-name: "&d粉色郁金香"
+    currency: vault
+    buy-price: 4
+    products:
+      1:
+        material: PINK_TULIP
+        amount: 1
+
+  16_cornflower:
+    display-name: "&9矢车菊"
+    currency: vault
+    buy-price: 5
+    products:
+      1:
+        material: CORNFLOWER
+        amount: 1
+
+  17_blue_orchid:
+    display-name: "&b兰花"
+    currency: vault
+    buy-price: 5
+    products:
+      1:
+        material: BLUE_ORCHID
+        amount: 1
+
+  18_allium:
+    display-name: "&5绣球葱"
+    currency: vault
+    buy-price: 7
+    products:
+      1:
+        material: ALLIUM
+        amount: 1
+
+  19_rose_bush:
+    display-name: "&c玫瑰丛"
+    currency: vault
+    buy-price: 4
+    products:
+      1:
+        material: ROSE_BUSH
+        amount: 1
+
+  20_sunflower:
+    display-name: "&e向日葵"
+    currency: vault
+    buy-price: 4
+    products:
+      1:
+        material: SUNFLOWER
+        amount: 1
+
+  21_lilac:
+    display-name: "&d丁香"
+    currency: vault
+    buy-price: 4
+    products:
+      1:
+        material: LILAC
+        amount: 1
+
+  22_oxeye_daisy:
+    display-name: "&f雏菊"
+    currency: vault
+    buy-price: 4
+    products:
+      1:
+        material: OXEYE_DAISY
+        amount: 1
+
+  23_lily_of_the_valley:
+    display-name: "&f铃兰"
+    currency: vault
+    buy-price: 4
+    products:
+      1:
+        material: LILY_OF_THE_VALLEY
+        amount: 1
+
+  24_azure_bluet:
+    display-name: "&3滨菊"
+    currency: vault
+    buy-price: 5
+    products:
+      1:
+        material: AZURE_BLUET
+        amount: 1
+
+  25_dead_bush:
+    display-name: "&2枯萎灌木"
+    currency: vault
+    buy-price: 6
+    products:
+      1:
+        material: DEAD_BUSH
+        amount: 1
+
+  26_fern:
+    display-name: "&a蕨"
+    currency: vault
+    buy-price: 3
+    products:
+      1:
+        material: FERN
+        amount: 1

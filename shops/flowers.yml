@@ -1,0 +1,406 @@
+settings:
+  menu: 'example-shop-menu'
+  buy-more: true
+  shop-name: '花卉与植物'
+  hide-message: false
+
+items:
+  # --- 基础花卉 → 基础染料 (染料价 3.0 | 花价 3.5) ---
+  A:
+    display-name: "&c虞美人"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: POPPY
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  B:
+    display-name: "&e蒲公英"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: DANDELION
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  # --- 郁金香系列 → 基础染料 (染料价 3.0 | 花价 3.5) ---
+  C:
+    display-name: "&f白色郁金香"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: WHITE_TULIP
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  D:
+    display-name: "&6橙色郁金香"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: ORANGE_TULIP
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  E:
+    display-name: "&d粉红色郁金香"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: PINK_TULIP
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  # --- 常见花卉 → 混合染料 (染料价 4.5 | 花价 5.0) ---
+  F:
+    display-name: "&9矢车菊"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: CORNFLOWER
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '5.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  G:
+    display-name: "&b兰花"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: BLUE_ORCHID
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '5.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  # --- 稍稀有花卉 → 较稀有染料 (染料价 6.0 | 花价 6.8) ---
+  H:
+    display-name: "&5绣球葱"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: ALLIUM
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '6.8'
+        placeholder: '{amount}$'
+        start-apply: 0
+  # --- 基础花卉 → 基础染料 (3.0 → 3.5) ---
+  I:
+    display-name: "&c红色玫瑰丛"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: ROSE_BUSH
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  J:
+    display-name: "&e向日葵"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: SUNFLOWER
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  K:
+    display-name: "&d丁香"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: LILAC
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  # --- 白色系 → 白色染料 (3.0 → 3.5) ---
+  L:
+    display-name: "&f雏菊"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: OXEYE_DAISY
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  M:
+    display-name: "&f铃兰"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: LILY_OF_THE_VALLEY
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  # --- 蓝 / 青系 → 混合染料 (4.5 → 5.0) ---
+  N:
+    display-name: "&3滨菊"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: AZURE_BLUET
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '5.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  O:
+    display-name: "&9蓝色兰花"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: BLUE_ORCHID
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '5.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  # --- 特殊 / 装饰向（不产染料，但价格偏高） ---
+  P:
+    display-name: "&2枯萎的灌木"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: DEAD_BUSH
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '6.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  Q:
+    display-name: "&a蕨"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: FERN
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    # --- 基础花卉 → 基础染料 (3.0 → 3.5) ---
+  I:
+    display-name: "&c红色玫瑰丛"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: ROSE_BUSH
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  J:
+    display-name: "&e向日葵"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: SUNFLOWER
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  K:
+    display-name: "&d丁香"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: LILAC
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  # --- 白色系 → 白色染料 (3.0 → 3.5) ---
+  L:
+    display-name: "&f雏菊"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: OXEYE_DAISY
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  M:
+    display-name: "&f铃兰"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: LILY_OF_THE_VALLEY
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.5'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  # --- 蓝 / 青系 → 混合染料 (4.5 → 5.0) ---
+  N:
+    display-name: "&3滨菊"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: AZURE_BLUET
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '5.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  O:
+    display-name: "&9蓝色兰花"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: BLUE_ORCHID
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '5.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  # --- 特殊 / 装饰向（不产染料，但价格偏高） ---
+  P:
+    display-name: "&2枯萎的灌木"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: DEAD_BUSH
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '6.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+
+  Q:
+    display-name: "&a蕨"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: FERN
+        amount: 1
+    buy-prices:
+      1:
+        economy-plugin: Vault
+        amount: '3.0'
+        placeholder: '{amount}$'
+        start-apply: 0

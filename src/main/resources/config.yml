@@ -1,0 +1,232 @@
+currencies:
+  vault:
+    type: VAULT
+    display-name: "&#FFB300金币"
+  playerpoints:
+    type: PLAYERPOINTS
+    display-name: "&e点券"
+
+database:
+  type: yaml
+  host: "127.0.0.1"
+  port: 3306
+  database: "ymshop"
+  username: "root"
+  password: ""
+  pool-size: 10
+  ssl: false
+
+# 每日/定时限购限售的重置时区；留空时默认跟随服务器 JVM 时区。
+# 示例: "Asia/Shanghai"
+reset-timezone: ""
+
+trade-click-cooldown-ticks: 4
+
+item-template:
+  buy:
+    default-name: "&#FFB300{material_name}"
+    default-lore: []
+    append-lore:
+      - ""
+      - "&#00E676价格: &#FFFFFF{buy-price} {currency}"
+      - "{buy-limit-player-line}"
+      - "{buy-limit-server-line}"
+      - "{buy-blocked-player-line}"
+      - "{buy-blocked-server-line}"
+      - "{buy-no-money-line}"
+      - "{buy-refresh-player-line}"
+      - ""
+      - "{buy_left_hint_line}"
+      - "{buy_right_hint_line}"
+      - "{buy_shift_left_hint_line}"
+      - "{buy_shift_right_hint_line}"
+  sell:
+    default-name: "&#FFB300{material_name}"
+    default-lore: []
+    append-lore:
+      - ""
+      - "&#FFB300出售: &#FFFFFF{sell-price} {currency}"
+      - "{sell-limit-player-line}"
+      - "{sell-limit-server-line}"
+      - "{sell-blocked-player-line}"
+      - "{sell-blocked-server-line}"
+      - "{sell-no-items-line}"
+      - "{sell-refresh-player-line}"
+      - ""
+      - "{sell_left_hint_line}"
+      - "{sell_right_hint_line}"
+      - "{sell_shift_left_hint_line}"
+      - "{sell_shift_right_hint_line}"
+  dual:
+    default-name: "&#FFB300{material_name}"
+    default-lore: []
+    append-lore:
+      - ""
+      - "&#00E676购买: &#FFFFFF{buy-price} {currency}"
+      - "&#FFB300出售: &#FFFFFF{sell-price} {currency}"
+      - "{buy-limit-player-line}"
+      - "{buy-limit-server-line}"
+      - "{sell-limit-player-line}"
+      - "{sell-limit-server-line}"
+      - "{buy-blocked-player-line}"
+      - "{buy-blocked-server-line}"
+      - "{buy-no-money-line}"
+      - "{sell-blocked-player-line}"
+      - "{sell-blocked-server-line}"
+      - "{sell-no-items-line}"
+      - "{buy-refresh-dual-line}"
+      - "{sell-refresh-dual-line}"
+      - ""
+      - "{buy_left_hint_line}"
+      - "{buy_shift_left_hint_line}"
+      - "{sell_right_hint_line}"
+      - "{sell_shift_right_hint_line}"
+
+render-text:
+  trade-mode:
+    buy: "购买"
+    sell: "出售"
+  limits:
+    buy-player-line: "&#FF7777玩家购买次数: {buy-times-player}/{buy-limit-player}"
+    buy-server-line: "&#FF7777服务器购买次数: {buy-times-server}/{buy-limit-server}"
+    sell-player-line: "&#FF7777玩家出售次数: {sell-times-player}/{sell-limit-player}"
+    sell-server-line: "&#FF7777服务器出售次数: {sell-times-server}/{sell-limit-server}"
+  blocked:
+    buy-player-line: "&#ff3300无法再购买更多！"
+    buy-server-line: "&#ff3300已售罄！"
+    buy-no-money-line: "&#ff3300余额不足！"
+    sell-player-line: "&#ff3300无法再出售更多！"
+    sell-server-line: "&#ff3300服务器无法再出售更多！"
+    sell-no-items-line: "&#ff3300背包里没有可出售的物品！"
+  refresh:
+    buy-player-line: "&8刷新时间: {buy-refresh-player}"
+    sell-player-line: "&8刷新时间: {sell-refresh-player}"
+    buy-dual-line: "&8购买刷新: {buy-refresh-player}"
+    sell-dual-line: "&8出售刷新: {sell-refresh-player}"
+  click:
+    left: "左键"
+    right: "右键"
+    shift-left: "Shift+左键"
+    shift-right: "Shift+右键"
+    buy-action: "购买"
+    sell-action: "出售"
+    all-line: "&#FF5252{click}: &#90A4AE{action}全部"
+    fixed-line: "&#FF5252{click}: &#90A4AE{action} {amount} 个"
+  reset:
+    disabled: "未启用"
+  duration:
+    day: "{value}天"
+    hour: "{value}小时"
+    minute: "{value}分钟"
+    second: "{value}秒"
+  format:
+    unlimited: "无限"
+  summary:
+    default-currency: "金额"
+
+confirm-menu:
+  title: "&#FFB300确认交易"
+  side-buy: "购买"
+  side-sell: "出售"
+  estimate-buy-label: "消费"
+  estimate-sell-label: "收益"
+  confirm-slot: 11
+  preview-slot: 13
+  cancel-slot: 15
+  filler-item:
+    material: BLACK_STAINED_GLASS_PANE
+    name: "&7 "
+  confirm-item:
+    material: LIME_STAINED_GLASS_PANE
+    name: "&a确认{confirm_side}"
+    lore:
+      - "&7本次操作: &f{confirm_side}"
+      - "&7倍率: &f{confirm_times}"
+      - "&7数量: &f{confirm_amount}"
+      - "&7单价: &6{confirm_unit_price} {currency}"
+      - "&7总价: &6{confirm_price} {currency}"
+  cancel-item:
+    material: RED_STAINED_GLASS_PANE
+    name: "&#FF7777取消交易"
+  preview-lore:
+    - "&8确认预览"
+    - "&7本次操作: &f{confirm_side}"
+    - "&7本次数量: &f{confirm_amount}"
+    - "&7预计{confirm_price_label}: &6{confirm_price} {currency}"
+  preview-sellable-line: "&7当前可售: &f{sellable_amount}"
+
+favorites-menu:
+  title: "&6我的收藏"
+  background-item:
+    material: BLACK_STAINED_GLASS_PANE
+    name: "&7 "
+  empty-item:
+    material: NETHER_STAR
+    name: "&e我的收藏"
+    lore:
+      - "&7当前还没有收藏商品"
+      - "&7在商品页按 &fQ &7即可收藏"
+  favorite-line: "&eQ键: 加入收藏"
+  unfavorite-line: "&6Q键: 取消收藏"
+  added-message: "&a已收藏: &f{item}"
+  removed-message: "&e已取消收藏: &f{item}"
+  previous-enabled-item:
+    material: SPECTRAL_ARROW
+    name: "&e上一页"
+    lore:
+      - "&7当前页: &f{current_page}/{total_pages}"
+  previous-disabled-item:
+    material: GRAY_DYE
+    name: "&7已经是第一页"
+    lore:
+      - "&7当前页: &f{current_page}/{total_pages}"
+  next-enabled-item:
+    material: ARROW
+    name: "&e下一页"
+    lore:
+      - "&7当前页: &f{current_page}/{total_pages}"
+  next-disabled-item:
+    material: GRAY_DYE
+    name: "&7已经是最后一页"
+    lore:
+      - "&7当前页: &f{current_page}/{total_pages}"
+  back-item:
+    material: ARROW
+    name: "&c返回上一页"
+  close-item:
+    material: BARRIER
+    name: "&c关闭菜单"
+
+messages:
+  prefix: "&#FFB300[YmShop] &r"
+  no-permission: "&#FF7777你没有权限执行这个操作。"
+  no-permission-shop: "&#FF7777你没有权限打开商店 &6%shop%&#FF7777。"
+  unknown-subcommand: "&#FF7777未知子命令。"
+  reload-success: "&a商店配置已重载。"
+  reload-failed: "&#FF7777重载失败: &f%reason%"
+  shop-not-found: "&#FF7777找不到商店: &f%shop%"
+  entry-not-found: "&#FF7777找不到商品: &f%entry%"
+  entry-not-buyable: "&#FF7777该商品当前不支持购买。"
+  entry-not-sellable: "&#FF7777该商品当前不支持出售。"
+  player-not-found: "&#FF7777找不到目标玩家。"
+  player-only: "&#FF7777该命令只能由玩家执行。"
+  player-schedule-failed: "&#FF7777无法调度到玩家线程: &f%player%"
+  buy-success: "&a购买成功，消费 &6%price% %currency%&a，获得 &6%amount%&a 个物品。"
+  sell-success: "&a出售成功，获得 &6%price% %currency%&a。"
+  not-enough-currency: "&#FF7777你的 %currency% 不足。当前余额: &f%balance%"
+  currency-playerpoints-missing: "&#FF7777未找到 PlayerPoints，无法处理该货币。"
+  currency-vault-missing: "&#FF7777未找到 Vault 经济实现，无法处理金币货币。"
+  currency-balance-missing: "&#FF7777该自定义货币没有可读取的余额占位符。"
+  currency-take-command-missing: "&#FF7777该自定义货币没有配置扣除指令。"
+  currency-give-command-missing: "&#FF7777该自定义货币没有配置发放指令。"
+  currency-take-failed: "&#FF7777扣除 %currency% 失败。"
+  currency-give-failed: "&#FF7777发放 %currency% 失败。"
+  currency-overflow: "&#FF7777金额超出当前实现允许的范围。"
+  not-enough-items: "&#FF7777你身上的可出售物品不足，需要 &6%need%&#FF7777，当前只有 &6%has%&#FF7777。"
+  remove-item-failed: "&#FF7777移除玩家物品失败，请重试。"
+  limit-player: "&#FF7777你已达到该商品的个人总限制，上限: &6%limit%"
+  limit-global: "&#FF7777该商品已达到全局总限制，上限: &6%limit%"
+  limit-buy: "&#FF7777你已达到该商品的限购上限: &6%limit%"
+  limit-sell: "&#FF7777你已达到该商品的限售上限: &6%limit%"
+  itemmodel-empty-hand: "&#FF7777请先把要读取的物品拿在主手。"
+  itemmodel-header: "&a以下内容可直接复制到配置文件:"

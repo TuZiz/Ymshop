@@ -1,0 +1,167 @@
+package ym.ymshop.service
+
+import ym.ymshop.model.EntryStats
+import ym.ymshop.model.TradeMode
+import ym.ymshop.model.TradeSide
+import ym.ymshop.storage.PlayerDataBackend
+import ym.ymshop.storage.ShopPlayerStatsKey
+import ym.ymshop.storage.ShopStatsRow
+import java.util.UUID
+
+class ShopDataStore(
+    private val shopId: String,
+    private val backend: PlayerDataBackend
+) {
+
+    private val snapshot = backend.loadShopSnapshot(shopId)
+    private val dirtyPlayerKeys = linkedSetOf<ShopPlayerStatsKey>()
+    private val dirtyGlobalEntryIds = linkedSetOf<String>()
+
+    fun stats(entryId: String, playerId: UUID): EntryStats {
+        val playerRow = snapshot.playerRows[ShopPlayerStatsKey(playerId, entryId)] ?: ShopStatsRow()
+        val globalRow = snapshot.globalRows[entryId] ?: ShopStatsRow()
+        return EntryStats(
+            playerTotal = playerRow.total,
+            playerBuy = playerRow.buy,
+            playerSell = playerRow.sell,
+            globalTotal = globalRow.total,
+            globalBuy = globalRow.buy,
+            globalSell = globalRow.sell
+        )
+    }
+
+    fun record(entryId: String, playerId: UUID, mode: TradeMode, amount: Int) {
+        val playerRow = playerRow(playerId, entryId)
+        val globalRow = globalRow(entryId)
+        playerRow.total += amount
+        globalRow.total += amount
+
+        when (mode) {
+            TradeMode.BUY -> {
+                playerRow.buy += amount
+                globalRow.buy += amount
+            }
+
+            TradeMode.SELL -> {
+                playerRow.sell += amount
+                globalRow.sell += amount
+            }
+
+            TradeMode.BOTH -> Unit
+        }
+        markDirty(playerId, entryId)
+        markDirty(entryId)
+        flushDirty(waitForCompletion = false)
+    }
+
+    fun sideResetMarker(entryId: String, playerId: UUID, side: TradeSide, scope: ResetScope): Long {
+        val row = if (scope == ResetScope.PLAYER) {
+            snapshot.playerRows[ShopPlayerStatsKey(playerId, entryId)] ?: ShopStatsRow()
+        } else {
+            snapshot.globalRows[entryId] ?: ShopStatsRow()
+        }
+        return if (side == TradeSide.BUY) row.buyResetMarker else row.sellResetMarker
+    }
+
+    fun setSideResetMarker(
+        entryId: String,
+        playerId: UUID,
+        side: TradeSide,
+        scope: ResetScope,
+        marker: Long,
+        save: Boolean = true
+    ) {
+        val row = if (scope == ResetScope.PLAYER) playerRow(playerId, entryId) else globalRow(entryId)
+        if (side == TradeSide.BUY) {
+            row.buyResetMarker = marker
+        } else {
+            row.sellResetMarker = marker
+        }
+        if (scope == ResetScope.PLAYER) {
+            markDirty(playerId, entryId)
+        } else {
+            markDirty(entryId)
+        }
+        if (save) {
+            flushDirty(waitForCompletion = false)
+        }
+    }
+
+    fun sideCount(entryId: String, playerId: UUID, side: TradeSide, scope: ResetScope): Long {
+        return when (scope) {
+            ResetScope.PLAYER -> {
+                val row = snapshot.playerRows[ShopPlayerStatsKey(playerId, entryId)] ?: ShopStatsRow()
+                if (side == TradeSide.BUY) row.buy else row.sell
+            }
+
+            ResetScope.GLOBAL -> {
+                val row = snapshot.globalRows[entryId] ?: ShopStatsRow()
+                if (side == TradeSide.BUY) row.buy else row.sell
+            }
+        }
+    }
+
+    fun resetSide(entryId: String, playerId: UUID, side: TradeSide, scope: ResetScope, save: Boolean = true) {
+        val row = if (scope == ResetScope.PLAYER) playerRow(playerId, entryId) else globalRow(entryId)
+        if (side == TradeSide.BUY) {
+            row.buy = 0L
+        } else {
+            row.sell = 0L
+        }
+        if (scope == ResetScope.PLAYER) {
+            markDirty(playerId, entryId)
+        } else {
+            markDirty(entryId)
+        }
+        if (save) {
+            flushDirty(waitForCompletion = false)
+        }
+    }
+
+    fun playerIds(entryId: String): Set<UUID> {
+        return snapshot.playerRows.keys.asSequence()
+            .filter { it.entryId == entryId }
+            .map { it.playerId }
+            .toSet()
+    }
+
+    fun save() {
+        flushDirty(waitForCompletion = true)
+    }
+
+    fun saveAsync() {
+        flushDirty(waitForCompletion = false)
+    }
+
+    private fun playerRow(playerId: UUID, entryId: String): ShopStatsRow {
+        return snapshot.playerRows.getOrPut(ShopPlayerStatsKey(playerId, entryId)) { ShopStatsRow() }
+    }
+
+    private fun globalRow(entryId: String): ShopStatsRow {
+        return snapshot.globalRows.getOrPut(entryId) { ShopStatsRow() }
+    }
+
+    private fun markDirty(playerId: UUID, entryId: String) {
+        dirtyPlayerKeys += ShopPlayerStatsKey(playerId, entryId)
+    }
+
+    private fun markDirty(entryId: String) {
+        dirtyGlobalEntryIds += entryId
+    }
+
+    private fun flushDirty(waitForCompletion: Boolean) {
+        val playerKeys = dirtyPlayerKeys.toSet()
+        val globalKeys = dirtyGlobalEntryIds.toSet()
+        dirtyPlayerKeys.clear()
+        dirtyGlobalEntryIds.clear()
+        backend.saveShopChanges(shopId, snapshot, playerKeys, globalKeys)
+        if (waitForCompletion) {
+            backend.flush()
+        }
+    }
+
+    enum class ResetScope {
+        PLAYER,
+        GLOBAL
+    }
+}

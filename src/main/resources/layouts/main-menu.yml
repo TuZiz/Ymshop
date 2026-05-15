@@ -1,0 +1,158 @@
+title: "&#FFD700&l{shop-name} &#808080| &#00E5FF&l分类导航"
+size: 54
+
+open-actions:
+  1:
+    type: sound
+    sound: block.note_block.pling
+
+layout:
+  - "0000S0000"
+  - "0A0B0C0D0"
+  - "00G0F0000"
+  - "0E0000000"
+  - "000000000"
+  - "000030000"
+
+buttons:
+  "S":
+    display-item:
+      material: SUNFLOWER
+      amount: 1
+      name: "&#FFD700&l⭐ 今日交易状态 ⭐"
+      lore:
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+        - "&#A9A9A9统计货币: &#F0E68C{today_summary_currency}"
+        - "&#A9A9A9今日还可卖: &#32CD32{today_sell_remaining} &#F0E68C{today_summary_currency}"
+        - "&#A9A9A9今日总收益: &#FFD700{today_sell_earned} &#F0E68C{today_summary_currency}"
+        - "&#A9A9A9今日总消费: &#FF4B4B{today_buy_spent} &#F0E68C{today_summary_currency}"
+        - ""
+        - "&#A9A9A9统计日期: &#FFFFFF{today_summary_day}"
+        - "&#A9A9A9刷新倒计时: &#00BFFF{today_summary_refresh}"
+        - ""
+        - "&#7FFFD4▶ 打开任意分类后即可继续交易"
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+  "A":
+    display-item:
+      material: WHEAT
+      amount: 1
+      name: "&#32CD32&l🌾 农业商店"
+      lore:
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+        - "&#E0E0E0包含种子、作物、植物与种植产物"
+        - ""
+        - "&#00FF7F▶ 点击进入农作物与种植分类"
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+    actions:
+      1:
+        type: open_menu
+        menu: crops
+  "B":
+    display-item:
+      material: IRON_INGOT
+      amount: 1
+      name: "&#E0E0E0&l⛏ 矿物商店"
+      lore:
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+        - "&#E0E0E0包含原矿、锭类、宝石与矿物资源"
+        - ""
+        - "&#00FF7F▶ 点击进入矿物与采集分类"
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+    actions:
+      1:
+        type: open_menu
+        menu: minerals
+  "C":
+    display-item:
+      material: COOKED_BEEF
+      amount: 1
+      name: "&#FFA500&l🍗 食物商店"
+      lore:
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+        - "&#E0E0E0包含熟食、补给、炖菜与进阶食物"
+        - ""
+        - "&#00FF7F▶ 点击进入食物与补给分类"
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+    actions:
+      1:
+        type: open_menu
+        menu: food
+  "D":
+    display-item:
+      material: CHERRY_LOG
+      amount: 1
+      name: "&#FF69B4&l🧱 建材装饰"
+      lore:
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+        - "&#E0E0E0包含原木、花卉、自然装饰素材"
+        - ""
+        - "&#00FF7F▶ 点击进入建材与装饰分类"
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+    actions:
+      1:
+        type: open_menu
+        menu: blocks
+  "E":
+    display-item:
+      material: GHAST_TEAR
+      amount: 1
+      name: "&#9370DB&l⚔ 掉落杂项"
+      lore:
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+        - "&#E0E0E0包含怪物掉落、酿造材料、下界素材"
+        - ""
+        - "&#00FF7F▶ 点击进入战利品与材料分类"
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+    actions:
+      1:
+        type: open_menu
+        menu: misc
+  "F":
+    display-item:
+      material: NETHER_STAR
+      amount: 1
+      name: "&#FF1493&l❤ 收藏商品"
+      lore:
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+        - "&#E0E0E0打开您专属的常用商品收藏列表"
+        - "&#E0E0E0便于快速回到高频交易物品"
+        - ""
+        - "&#FF69B4▶ 点击打开我的收藏"
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+    actions:
+      1:
+        type: open_menu
+        menu: favorites
+  "G":
+    display-item:
+      material: ENCHANTED_BOOK
+      amount: 1
+      name: "&#8A2BE2&l✨ 附魔书商店"
+      lore:
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+        - "&#E0E0E0提供高价功能附魔书与稀有附魔"
+        - "&#E0E0E0适合作为后期的金币回收商店"
+        - ""
+        - "&#DDA0DD▶ 点击查看附魔"
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+    actions:
+      1:
+        type: open_menu
+        menu: enchanted-books
+  "3":
+    display-item:
+      material: BARRIER
+      amount: 1
+      name: "&#FF4B4B&l❌ 关闭菜单"
+      lore:
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+        - "&#E0E0E0关闭当前的商店导航界面"
+        - "&#808080━━━━━━━━━━━━━━━━━━━━"
+    actions:
+      1:
+        type: close
+  "0":
+    display-item:
+      material: BLACK_STAINED_GLASS_PANE
+      amount: 1
+      name: "&f"

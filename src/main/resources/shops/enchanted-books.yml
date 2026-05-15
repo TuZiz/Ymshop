@@ -1,0 +1,325 @@
+settings:
+  menu: category-shop-menu
+  buy-more: false
+  shop-name: "&5附魔书商店"
+  hide-message: false
+  trade-amounts:
+    buy:
+      left: 1
+      right: 1
+      shift-left: none
+      shift-right: none
+    sell:
+      left: none
+      right: none
+      shift-left: none
+      shift-right: none
+
+items:
+  01_mending:
+    display-name: "&d经验修补"
+    lore:
+      - "&7顶级功能附魔，后期常用"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 22000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          mending: 1
+
+  02_swift_sneak_iii:
+    display-name: "&5迅捷潜行 III"
+    lore:
+      - "&7稀有遗迹附魔，适合作为高端金币回收口"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 26000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          swift_sneak: 3
+
+  03_soul_speed_iii:
+    display-name: "&6灵魂疾行 III"
+    lore:
+      - "&7下界稀有功能附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 22000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          soul_speed: 3
+
+  04_efficiency_v:
+    display-name: "&e效率 V"
+    lore:
+      - "&7高阶采集核心附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 14000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          efficiency: 5
+
+  05_fortune_iii:
+    display-name: "&6时运 III"
+    lore:
+      - "&7矿物与作物收益向附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 18000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          fortune: 3
+
+  06_silk_touch:
+    display-name: "&b精准采集"
+    lore:
+      - "&7建筑与资源整理常用"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 16000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          silk_touch: 1
+
+  07_unbreaking_iii:
+    display-name: "&a耐久 III"
+    lore:
+      - "&7通用保值附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 9000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          unbreaking: 3
+
+  08_protection_iv:
+    display-name: "&9保护 IV"
+    lore:
+      - "&7护甲通用核心附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 12000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          protection: 4
+
+  09_feather_falling_iv:
+    display-name: "&b摔落保护 IV"
+    lore:
+      - "&7探索与跑图常用附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 10500
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          feather_falling: 4
+
+  10_respiration_iii:
+    display-name: "&3水下呼吸 III"
+    lore:
+      - "&7海洋探索向附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 9500
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          respiration: 3
+
+  11_aqua_affinity:
+    display-name: "&3水下速掘"
+    lore:
+      - "&7海底施工与采集辅助附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 6000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          aqua_affinity: 1
+
+  12_sharpness_v:
+    display-name: "&c锋利 V"
+    lore:
+      - "&7近战武器常用高阶附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 13500
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          sharpness: 5
+
+  13_looting_iii:
+    display-name: "&6抢夺 III"
+    lore:
+      - "&7怪物掉落收益向附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 14500
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          looting: 3
+
+  14_fire_aspect_ii:
+    display-name: "&6火焰附加 II"
+    lore:
+      - "&7近战补充型附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 8500
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          fire_aspect: 2
+
+  15_power_v:
+    display-name: "&e力量 V"
+    lore:
+      - "&7弓箭主力输出附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 12000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          power: 5
+
+  16_infinity:
+    display-name: "&d无限"
+    lore:
+      - "&7弓箭便利向稀有附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 16000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          infinity: 1
+
+  17_loyalty_iii:
+    display-name: "&b忠诚 III"
+    lore:
+      - "&7三叉戟常用附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 11500
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          loyalty: 3
+
+  18_riptide_iii:
+    display-name: "&3激流 III"
+    lore:
+      - "&7跑图与海战向高阶附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 15000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          riptide: 3
+
+  19_impaling_v:
+    display-name: "&3穿刺 V"
+    lore:
+      - "&7水域战斗向附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 12500
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          impaling: 5
+
+  20_quick_charge_iii:
+    display-name: "&7快速装填 III"
+    lore:
+      - "&7弩系功能附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 9000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          quick_charge: 3
+
+  21_depth_strider_iii:
+    display-name: "&3深海探索者 III"
+    lore:
+      - "&7海洋移动向实用附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 11000
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          depth_strider: 3
+
+  22_thorns_iii:
+    display-name: "&c荆棘 III"
+    lore:
+      - "&7护甲反伤向高阶附魔"
+      - "&8高价消费型商品，仅支持购买"
+    currency: vault
+    buy-price: 14500
+    products:
+      1:
+        material: ENCHANTED_BOOK
+        amount: 1
+        enchants:
+          thorns: 3

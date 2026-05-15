@@ -1,0 +1,486 @@
+settings:
+  menu: category-shop-menu
+  buy-more: true
+  shop-name: "&a农作与种植商店"
+  hide-message: false
+
+items:
+  wheat_seeds:
+    display-name: "&e小麦种子"
+    currency: vault
+    buy-price: 12
+    sell-price: 3
+    products:
+      1:
+        material: WHEAT_SEEDS
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  beetroot_seeds:
+    display-name: "&c甜菜种子"
+    currency: vault
+    buy-price: 12
+    sell-price: 3
+    products:
+      1:
+        material: BEETROOT_SEEDS
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  pumpkin_seeds:
+    display-name: "&6南瓜种子"
+    currency: vault
+    buy-price: 14
+    sell-price: 3
+    products:
+      1:
+        material: PUMPKIN_SEEDS
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  melon_seeds:
+    display-name: "&a西瓜种子"
+    currency: vault
+    buy-price: 14
+    sell-price: 3
+    products:
+      1:
+        material: MELON_SEEDS
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  potato:
+    display-name: "&6马铃薯"
+    currency: vault
+    buy-price: 8
+    sell-price: 3
+    products:
+      1:
+        material: POTATO
+        amount: 1
+    sell-limits:
+      default: 96
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  carrot:
+    display-name: "&6胡萝卜"
+    currency: vault
+    buy-price: 8
+    sell-price: 3
+    products:
+      1:
+        material: CARROT
+        amount: 1
+    sell-limits:
+      default: 96
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  wheat:
+    display-name: "&e小麦"
+    currency: vault
+    buy-price: 10
+    sell-price: 4
+    products:
+      1:
+        material: WHEAT
+        amount: 1
+    sell-limits:
+      default: 96
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  beetroot:
+    display-name: "&c甜菜根"
+    currency: vault
+    buy-price: 10
+    sell-price: 4
+    products:
+      1:
+        material: BEETROOT
+        amount: 1
+    sell-limits:
+      default: 96
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  melon_slice:
+    display-name: "&a西瓜片"
+    currency: vault
+    buy-price: 12
+    sell-price: 5
+    products:
+      1:
+        material: MELON_SLICE
+        amount: 1
+    sell-limits:
+      default: 96
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  pumpkin:
+    display-name: "&6南瓜"
+    currency: vault
+    buy-price: 12
+    sell-price: 5
+    products:
+      1:
+        material: PUMPKIN
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  apple:
+    display-name: "&c苹果"
+    currency: vault
+    buy-price: 14
+    sell-price: 5
+    products:
+      1:
+        material: APPLE
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  sugar_cane:
+    display-name: "&a甘蔗"
+    currency: vault
+    buy-price: 18
+    sell-price: 6
+    products:
+      1:
+        material: SUGAR_CANE
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  cactus:
+    display-name: "&2仙人掌"
+    currency: vault
+    buy-price: 15
+    sell-price: 5
+    products:
+      1:
+        material: CACTUS
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  bamboo:
+    display-name: "&a竹子"
+    currency: vault
+    buy-price: 10
+    sell-price: 3
+    products:
+      1:
+        material: BAMBOO
+        amount: 1
+    sell-limits:
+      default: 96
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  kelp:
+    display-name: "&2海带"
+    currency: vault
+    buy-price: 9
+    sell-price: 2
+    products:
+      1:
+        material: KELP
+        amount: 1
+    sell-limits:
+      default: 96
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  dried_kelp:
+    display-name: "&2干海带"
+    currency: vault
+    buy-price: 8
+    sell-price: 2
+    products:
+      1:
+        material: DRIED_KELP
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  nether_wart:
+    display-name: "&4下界疣"
+    currency: vault
+    buy-price: 20
+    sell-price: 6
+    products:
+      1:
+        material: NETHER_WART
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  cocoa_beans:
+    display-name: "&6可可豆"
+    currency: vault
+    buy-price: 16
+    sell-price: 5
+    products:
+      1:
+        material: COCOA_BEANS
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  sweet_berries:
+    display-name: "&d甜浆果"
+    currency: vault
+    buy-price: 18
+    sell-price: 6
+    products:
+      1:
+        material: SWEET_BERRIES
+        amount: 1
+    sell-limits:
+      default: 64
+      vip: 128
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  glow_berries:
+    display-name: "&e发光浆果"
+    currency: vault
+    buy-price: 24
+    sell-price: 8
+    products:
+      1:
+        material: GLOW_BERRIES
+        amount: 1
+    sell-limits:
+      default: 48
+      vip: 96
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  poisonous_potato:
+    display-name: "&2毒马铃薯"
+    currency: vault
+    buy-price: 6
+    sell-price: 1
+    products:
+      1:
+        material: POISONOUS_POTATO
+        amount: 1
+    sell-limits:
+      default: 32
+      vip: 64
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  brown_mushroom:
+    display-name: "&6棕色蘑菇"
+    currency: vault
+    buy-price: 10
+    sell-price: 4
+    products:
+      1:
+        material: BROWN_MUSHROOM
+        amount: 1
+    sell-limits:
+      default: 48
+      vip: 96
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  red_mushroom:
+    display-name: "&c红色蘑菇"
+    currency: vault
+    buy-price: 10
+    sell-price: 4
+    products:
+      1:
+        material: RED_MUSHROOM
+        amount: 1
+    sell-limits:
+      default: 48
+      vip: 96
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"
+
+  chorus_fruit:
+    display-name: "&d紫颂果"
+    currency: vault
+    buy-price: 20
+    sell-price: 8
+    products:
+      1:
+        material: CHORUS_FRUIT
+        amount: 1
+    sell-limits:
+      default: 32
+      vip: 64
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: "group.vip"
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: "00:00:00"

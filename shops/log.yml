@@ -1,0 +1,266 @@
+settings:
+  menu: 'example-shop-menu'
+  buy-more: true
+  shop-name: '木头'
+  hide-message: false
+
+items:
+  A:
+    display-name: "&6橡木"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: OAK_LOG
+        amount: 1
+    sell-prices:
+      1:
+        economy-plugin: Vault
+        amount: '1.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: 'group.vip'
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: '00:00:00'
+
+  B:
+    display-name: "&e云杉木"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: SPRUCE_LOG
+        amount: 1
+    sell-prices:
+      1:
+        economy-plugin: Vault
+        amount: '1.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: 'group.vip'
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: '00:00:00'
+
+  C:
+    display-name: "&f白桦木"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: BIRCH_LOG
+        amount: 1
+    sell-prices:
+      1:
+        economy-plugin: Vault
+        amount: '1.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: 'group.vip'
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: '00:00:00'
+
+  D:
+    display-name: "&d丛林木"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: JUNGLE_LOG
+        amount: 1
+    sell-prices:
+      1:
+        economy-plugin: Vault
+        amount: '1.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: 'group.vip'
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: '00:00:00'
+
+  E:
+    display-name: "&c金合欢木"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: ACACIA_LOG
+        amount: 1
+    sell-prices:
+      1:
+        economy-plugin: Vault
+        amount: '1.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: 'group.vip'
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: '00:00:00'
+
+  F:
+    display-name: "&8深色橡木"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: DARK_OAK_LOG
+        amount: 1
+    sell-prices:
+      1:
+        economy-plugin: Vault
+        amount: '1.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: 'group.vip'
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: '00:00:00'
+
+  G:
+    display-name: "&4红树木"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: MANGROVE_LOG
+        amount: 1
+    sell-prices:
+      1:
+        economy-plugin: Vault
+        amount: '1.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: 'group.vip'
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: '00:00:00'
+
+  H:
+    display-name: "&d樱花木"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: CHERRY_LOG
+        amount: 1
+    sell-prices:
+      1:
+        economy-plugin: Vault
+        amount: '1.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    sell-limits:
+      global: 1024
+      default: 128
+      vip: 192
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: 'group.vip'
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: '00:00:00'
+
+  I:
+    display-name: "&5绯红菌岩"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: CRIMSON_STEM
+        amount: 1
+    sell-prices:
+      1:
+        economy-plugin: Vault
+        amount: '1.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    sell-limits:
+      global: 512
+      default: 64
+      vip: 96
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: 'group.vip'
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: '00:00:00'
+
+  J:
+    display-name: "&3诡异菌岩"
+    price-mode: CLASSIC_ALL
+    product-mode: CLASSIC_ALL
+    products:
+      1:
+        material: WARPED_STEM
+        amount: 1
+    sell-prices:
+      1:
+        economy-plugin: Vault
+        amount: '1.0'
+        placeholder: '{amount}$'
+        start-apply: 0
+    sell-limits:
+      global: 512
+      default: 64
+      vip: 96
+    sell-limits-conditions:
+      vip:
+        1:
+          type: permission
+          permission: 'group.vip'
+    sell-times-reset-mode: TIMED
+    sell-times-reset-time: '00:00:00'

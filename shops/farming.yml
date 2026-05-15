@@ -1,0 +1,655 @@
+settings:
+    menu: 'example-shop-menu'
+    buy-more: true
+    shop-name: '农作物'
+    hide-message: false
+
+items:
+    Y:
+        display-name: "&6金萝卜"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: GOLDEN_CARROT
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '16.0'  # 金胡萝卜价格设为12.0
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 96         # 限制较少，因其较稀有
+            default: 12
+            vip: 24
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'    
+    X:
+        display-name: "&2仙人掌"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: CACTUS
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '0.8'   # 设定基准价约 0.8 -> 涨价 50% 后为 1.2
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 1536       # 仙人掌易大规模自动化，限额设为胡萝卜的2倍
+            default: 256
+            vip: 467
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+    
+    A:
+        display-name: "&c苹果"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: APPLE
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '4.5'  # 原3.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 384        # 原512 → 减少25%
+            default: 96        # 原128 → 减少25%
+            vip: 148           # 原198 → 减少25%
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    B:
+        display-name: "&6面包"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: BREAD
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '5.4'  # 原3.6 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 384
+            default: 96
+            vip: 148
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    C:
+        display-name: "&6胡萝卜"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: CARROT
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '1.2'  # 原0.8 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 768        # 原1024 → 减少25%
+            default: 192       # 原256 → 减少25%
+            vip: 288           # 原384 → 减少25%
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    D:
+        display-name: "&6烤马铃薯"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: BAKED_POTATO  # 修改为烤马铃薯
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '3.8'  # 您指定的价格
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 768
+            default: 192
+            vip: 288
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    E:
+        display-name: "&c甜菜根"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: BEETROOT
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '3.0'  # 原2.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 480        # 原640 → 减少25%
+            default: 96        # 原128 → 减少25%
+            vip: 144           # 原192 → 减少25%
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    F:
+        display-name: "&a西瓜片"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: MELON_SLICE
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '1.95'  # 原1.3 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 480
+            default: 96
+            vip: 144
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    G:
+        display-name: "&c甜浆果"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: SWEET_BERRIES
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '4.35'  # 原2.9 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 480
+            default: 96
+            vip: 144
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    H:
+        display-name: "&e发光浆果"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: GLOW_BERRIES
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '5.1'  # 原3.4 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 240        # 原320 → 减少25%
+            default: 48        # 原64 → 减少25%
+            vip: 72            # 原96 → 减少25%
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    I:
+        display-name: "&6南瓜派"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: PUMPKIN_PIE
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '6.75'  # 原4.5 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 240
+            default: 48
+            vip: 72
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    J:
+        display-name: "&6熟鸡肉"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: COOKED_CHICKEN
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '7.5'  # 原5.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 384
+            default: 96
+            vip: 144
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    K:
+        display-name: "&6熟牛排"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: COOKED_BEEF
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '9.0'  # 原6.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 384
+            default: 96
+            vip: 144
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    L:
+        display-name: "&6熟猪排"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: COOKED_PORKCHOP
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '7.5'  # 原5.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 384
+            default: 96
+            vip: 144
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    M:
+        display-name: "&b熟鳕鱼"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: COOKED_COD
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '4.5'  # 原3.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 480        # 原640 → 减少25%
+            default: 120       # 原160 → 减少25%
+            vip: 180           # 原240 → 减少25%
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    N:
+        display-name: "&6饼干"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: COOKIE
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '3.0'  # 原2.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 768
+            default: 192
+            vip: 288
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    O:
+        display-name: "&d蛋糕"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: CAKE
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '15.0'  # 原10.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 96         # 原128 → 减少25%
+            default: 24        # 原32 → 减少25%
+            vip: 36            # 原48 → 减少25%
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    P:
+        display-name: "&6蘑菇煲"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: MUSHROOM_STEW
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '9.0'  # 原6.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 240
+            default: 48
+            vip: 72
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    Q:
+        display-name: "&6熟羊肉"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: COOKED_MUTTON
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '7.5'  # 原5.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 384
+            default: 96
+            vip: 144
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    R:
+        display-name: "&6熟兔肉"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: COOKED_RABBIT
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '6.0'  # 原4.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 384
+            default: 96
+            vip: 144
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    S:
+        display-name: "&6金苹果"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: GOLDEN_APPLE
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '75.0'  # 原50.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 48         # 原64 → 减少25%
+            default: 6         # 原8 → 减少25%
+            vip: 12            # 原16 → 减少25%
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    T:
+        display-name: "&e蜂蜜瓶"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: HONEY_BOTTLE
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '12.0'  # 原8.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 192        # 原256 → 减少25%
+            default: 48        # 原64 → 减少25%
+            vip: 72            # 原96 → 减少25%
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    U:
+        display-name: "&2毒马铃薯"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: POISONOUS_POTATO
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '1.5'  # 原1.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 768
+            default: 192
+            vip: 288
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    V:
+        display-name: "&2干海带"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: DRIED_KELP
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '3.0'  # 原2.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 768
+            default: 192
+            vip: 288
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    W:
+        display-name: "&6兔肉煲"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: RABBIT_STEW
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '12.0'  # 原8.0 → 涨价50%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 192
+            default: 48
+            vip: 72
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'

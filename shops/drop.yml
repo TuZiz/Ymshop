@@ -1,0 +1,527 @@
+settings:
+    menu: 'example-shop-menu'
+    buy-more: true
+    shop-name: '怪物掉落物与酿造材料'
+    hide-message: false
+
+items:
+    T:
+        display-name: "&4&l下界之星"
+        lore:
+            - "&7强大的下界怪物掉落物"
+            - "&7用于制作信标"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: NETHER_STAR
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '800.0'    # 下界之星价格设为1500.0
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 66
+            default: 3
+            vip: 6
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00' 
+    S:
+        display-name: "&f骨头"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: BONE
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '3.0'    # 骨头价格设为3.0
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 960
+            default: 256
+            vip: 384
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'    
+    A:
+        display-name: "&d&l恶魂之泪"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: GHAST_TEAR 
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '22.0'   # 原18.0 -> 提价后约22%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 240
+            default: 64
+            vip: 96
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    N:
+        display-name: "&5&l潜影壳"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: SHULKER_SHELL
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '26.0'   # 原22.0 -> 提价后约18%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 120
+            default: 16
+            vip: 24
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    B:
+        display-name: "&6烈焰棒"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: BLAZE_ROD
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '16.5'   # 原13.5 -> 提价后约22%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 240
+            default: 64
+            vip: 96
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    E:
+        display-name: "&5末影珍珠"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: ENDER_PEARL
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '8.0'   # 原9.0 -> 提价后约22%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 999
+            default: 128
+            vip: 192
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    R:
+        display-name: "&c&l岩浆膏"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: MAGMA_CREAM
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '13.0'   # 原10.8 -> 提价后约20%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 240
+            default: 64
+            vip: 96
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    L:
+        display-name: "&b海晶石"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: PRISMARINE_CRYSTALS
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '9.0'    # 原7.2 -> 提价后25%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 480
+            default: 128
+            vip: 192
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    Q:
+        display-name: "&e烈焰粉"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: BLAZE_POWDER
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '9.0'    # 原7.2
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 480
+            default: 128
+            vip: 192
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    O:
+        display-name: "&e兔子脚"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: RABBIT_FOOT
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '9.0'    # 原7.2
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 240
+            default: 64
+            vip: 96
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    M:
+        display-name: "&8海晶石碎片"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: PRISMARINE_SHARD
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '5.5'    # 原4.5 -> 提价约22%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 480
+            default: 128
+            vip: 192
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    F:
+        display-name: "&7火药"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: GUNPOWDER
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '6.5'    # 原5.4 -> 提价约20%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 480
+            default: 128
+            vip: 192
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    P:
+        display-name: "&a凝固的史莱姆"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: SLIME_BALL
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '6.5'    # 原5.4
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 480
+            default: 128
+            vip: 192
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    J:
+        display-name: "&c下界疣"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: NETHER_WART
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '4.5'    # 原3.6 -> 提价25%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 480
+            default: 128
+            vip: 192
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    C:
+        display-name: "&8发酵蛛眼"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: FERMENTED_SPIDER_EYE
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '3.5'    # 原2.7 -> 提价约30%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 960
+            default: 256
+            vip: 384
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    H:
+        display-name: "&f线"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: STRING
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '3.5'    # 原2.7
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 960
+            default: 256
+            vip: 384
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    G:
+        display-name: "&7箭"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: ARROW
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '2.5'    # 原1.8 -> 提价约38%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 960
+            default: 256
+            vip: 384
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    K:
+        display-name: "&8灵魂沙"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: SOUL_SAND
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '2.5'    # 原1.8
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 960
+            default: 256
+            vip: 384
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    D:
+        display-name: "&8蜘蛛眼"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: SPIDER_EYE
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '2.5'    # 原1.8
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 960
+            default: 256
+            vip: 384
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
+
+    I:
+        display-name: "&2腐肉"
+        price-mode: CLASSIC_ALL
+        product-mode: CLASSIC_ALL
+        products:
+            1:
+                material: ROTTEN_FLESH
+                amount: 1
+        sell-prices:
+            1:
+                economy-plugin: Vault
+                amount: '1.2'    # 原0.9 -> 提价约33%
+                placeholder: '{amount}$'
+                start-apply: 0
+        sell-limits:
+            global: 1920
+            default: 512
+            vip: 768
+        sell-limits-conditions:
+            vip:
+                1:
+                    type: permission
+                    permission: 'group.vip'
+        sell-times-reset-mode: 'TIMED'
+        sell-times-reset-time: '00:00:00'
