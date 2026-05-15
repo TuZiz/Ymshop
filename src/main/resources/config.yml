@@ -222,6 +222,7 @@ messages:
   currency-take-failed: "&#FF7777扣除 %currency% 失败。"
   currency-give-failed: "&#FF7777发放 %currency% 失败。"
   currency-overflow: "&#FF7777金额超出当前实现允许的范围。"
+  trade-persistence-failed: "&#FF7777交易已执行，但统计强一致落库失败，请联系管理员核查补偿日志。"
   not-enough-items: "&#FF7777你身上的可出售物品不足，需要 &6%need%&#FF7777，当前只有 &6%has%&#FF7777。"
   remove-item-failed: "&#FF7777移除玩家物品失败，请重试。"
   limit-player: "&#FF7777你已达到该商品的个人总限制，上限: &6%limit%"

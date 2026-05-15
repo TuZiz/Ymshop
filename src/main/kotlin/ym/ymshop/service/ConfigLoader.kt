@@ -173,6 +173,7 @@ class ConfigLoader(private val plugin: JavaPlugin) {
                 buyMore = settingsSection.getBoolean("buy-more", false),
                 hideMessage = settingsSection.getBoolean("hide-message", false),
                 permission = settingsSection.getString("permission")?.takeIf { it.isNotBlank() },
+                strictPersistence = settingsSection.getBoolean("strict-persistence", false),
                 tradeAmounts = loadTradeAmounts(settingsSection)
             ),
             layout = layout,

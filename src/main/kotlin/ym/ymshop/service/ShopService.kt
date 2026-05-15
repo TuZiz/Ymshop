@@ -302,7 +302,27 @@ class ShopService(
                 return@withEntryLock result
             }
 
-            store.record(entry.id, player.uniqueId, if (side == TradeSide.BUY) TradeMode.BUY else TradeMode.SELL, quantity)
+            val strictPersistence = shop.settings.strictPersistence && playerDataBackend.settings.isSql
+            val statsPersisted = store.record(
+                entry.id,
+                player.uniqueId,
+                if (side == TradeSide.BUY) TradeMode.BUY else TradeMode.SELL,
+                quantity,
+                waitForPersistence = strictPersistence
+            )
+            if (!statsPersisted) {
+                logCompensation(
+                    player = player,
+                    shop = shop,
+                    entry = entry,
+                    side = side,
+                    amount = quantity,
+                    currency = currency,
+                    totalPrice = totalPrice,
+                    reason = "strict stats persistence failed after successful trade"
+                )
+                return@withEntryLock TradeResult(false, "trade-persistence-failed", replacements)
+            }
             dailyTradeStore.record(player.uniqueId, LocalDate.now(zoneId), currency.id, side, totalPrice)
             logTrade(player, shop, entry, side, quantity, unitPrice(entry, side), totalPrice, currency)
             currencyService.dispatchCommands(player, entry.successCommands, replacements)

@@ -29,6 +29,7 @@ import ym.ymshop.model.TradeSide
 import ym.ymshop.util.applyText
 import java.util.ArrayDeque
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class ShopGuiService(
     private val plugin: org.bukkit.plugin.java.JavaPlugin,
@@ -39,9 +40,9 @@ class ShopGuiService(
     private val favoriteService: FavoriteService
 ) : Listener {
 
-    private val navigationStacks = mutableMapOf<UUID, ArrayDeque<PageState>>()
-    private val transitioningPlayers = mutableSetOf<UUID>()
-    private val lastTradeActionAt = mutableMapOf<UUID, Long>()
+    private val navigationStacks = ConcurrentHashMap<UUID, ArrayDeque<PageState>>()
+    private val transitioningPlayers = ConcurrentHashMap.newKeySet<UUID>()
+    private val lastTradeActionAt = ConcurrentHashMap<UUID, Long>()
     private val liveRefreshTask = platformExecutor.runGlobalTimer(LIVE_REFRESH_PERIOD_TICKS, LIVE_REFRESH_PERIOD_TICKS) {
         refreshOpenInventories()
     }
@@ -129,7 +130,7 @@ class ShopGuiService(
         )
         inventory.setItem(
             49,
-            backOrCloseItem(player, hasPrevious = (navigationStacks[player.uniqueId]?.size ?: 0) > 1)
+            backOrCloseItem(player, hasPrevious = hasPreviousNavigation(player.uniqueId))
         )
         inventory.setItem(
             53,
@@ -244,14 +245,13 @@ class ShopGuiService(
             }
 
             49 -> {
-                val stack = navigationStacks[player.uniqueId]
-                if (stack == null || stack.size <= 1) {
+                val previous = popNavigationBack(player.uniqueId)
+                if (previous == null) {
                     navigationStacks.remove(player.uniqueId)
                     closeInventory(player)
                     return
                 }
-                stack.removeLast()
-                reopenState(player, stack.last(), OpenMode.REPLACE)
+                reopenState(player, previous, OpenMode.REPLACE)
                 return
             }
 
@@ -339,6 +339,10 @@ class ShopGuiService(
                 }
 
                 ButtonActionType.RELOAD -> {
+                    if (!player.hasPermission("ymshop.reload")) {
+                        shopService.messageService().send(player, "no-permission", player = player)
+                        return
+                    }
                     platformExecutor.runGlobalAsync {
                         shopService.reload()
                     }.whenComplete { _, ex ->
@@ -374,14 +378,13 @@ class ShopGuiService(
                 }
 
                 ButtonActionType.BACK -> {
-                    val stack = navigationStacks[player.uniqueId]
-                    if (stack == null || stack.size <= 1) {
+                    val previous = popNavigationBack(player.uniqueId)
+                    if (previous == null) {
                         navigationStacks.remove(player.uniqueId)
                         closeInventory(player)
                         return
                     }
-                    stack.removeLast()
-                    reopenState(player, stack.last(), OpenMode.REPLACE)
+                    reopenState(player, previous, OpenMode.REPLACE)
                     return
                 }
 
@@ -577,21 +580,42 @@ class ShopGuiService(
     }
 
     private fun updateNavigation(playerId: UUID, state: PageState, mode: OpenMode) {
-        val stack = navigationStacks.getOrPut(playerId) { ArrayDeque() }
-        when (mode) {
-            OpenMode.OPEN -> {
-                stack.clear()
-                stack.addLast(state)
-            }
-
-            OpenMode.PUSH -> stack.addLast(state)
-            OpenMode.REPLACE -> {
-                if (stack.isEmpty()) {
-                    stack.addLast(state)
-                } else {
-                    stack.removeLast()
+        val stack = navigationStacks.computeIfAbsent(playerId) { ArrayDeque() }
+        synchronized(stack) {
+            when (mode) {
+                OpenMode.OPEN -> {
+                    stack.clear()
                     stack.addLast(state)
                 }
+
+                OpenMode.PUSH -> stack.addLast(state)
+                OpenMode.REPLACE -> {
+                    if (stack.isEmpty()) {
+                        stack.addLast(state)
+                    } else {
+                        stack.removeLast()
+                        stack.addLast(state)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun hasPreviousNavigation(playerId: UUID): Boolean {
+        val stack = navigationStacks[playerId] ?: return false
+        return synchronized(stack) {
+            stack.size > 1
+        }
+    }
+
+    private fun popNavigationBack(playerId: UUID): PageState? {
+        val stack = navigationStacks[playerId] ?: return null
+        return synchronized(stack) {
+            if (stack.size <= 1) {
+                null
+            } else {
+                stack.removeLast()
+                stack.last()
             }
         }
     }
@@ -920,12 +944,16 @@ class ShopGuiService(
         }
 
         val now = System.currentTimeMillis()
-        val previous = lastTradeActionAt[playerId]
-        if (previous != null && now - previous < cooldownMillis) {
-            return false
+        var acquired = false
+        lastTradeActionAt.compute(playerId) { _, previous ->
+            if (previous != null && now - previous < cooldownMillis) {
+                previous
+            } else {
+                acquired = true
+                now
+            }
         }
-        lastTradeActionAt[playerId] = now
-        return true
+        return acquired
     }
 
     private fun markTransition(player: Player) {

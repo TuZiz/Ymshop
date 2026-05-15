@@ -3,6 +3,8 @@ settings:
   buy-more: true
   shop-name: "&6你的商店"
   hide-message: false
+  # SQL backend only. Enable for high-value shops that must confirm stats persistence before reporting success.
+  strict-persistence: false
   # 可自定义四种点击的买卖数量；支持正整数、sell.shift-right: all、或 none/disabled
   trade-amounts:
     buy:

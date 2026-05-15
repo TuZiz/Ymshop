@@ -33,7 +33,7 @@ class ShopDataStore(
         }
     }
 
-    fun record(entryId: String, playerId: UUID, mode: TradeMode, amount: Int) {
+    fun record(entryId: String, playerId: UUID, mode: TradeMode, amount: Int, waitForPersistence: Boolean = false): Boolean {
         synchronized(lock) {
             val playerRow = playerRow(playerId, entryId)
             val globalRow = globalRow(entryId)
@@ -56,7 +56,7 @@ class ShopDataStore(
             markDirty(playerId, entryId)
             markDirty(entryId)
         }
-        flushDirty(waitForCompletion = false)
+        return flushDirty(waitForCompletion = waitForPersistence)
     }
 
     fun sideResetMarker(entryId: String, playerId: UUID, side: TradeSide, scope: ResetScope): Long {
@@ -164,7 +164,7 @@ class ShopDataStore(
         dirtyGlobalEntryIds += entryId
     }
 
-    private fun flushDirty(waitForCompletion: Boolean) {
+    private fun flushDirty(waitForCompletion: Boolean): Boolean {
         val playerKeys: Set<ShopPlayerStatsKey>
         val globalKeys: Set<String>
         val dirtySnapshot: ym.ymshop.storage.ShopStatsSnapshot
@@ -172,7 +172,7 @@ class ShopDataStore(
             playerKeys = dirtyPlayerKeys.toSet()
             globalKeys = dirtyGlobalEntryIds.toSet()
             if (playerKeys.isEmpty() && globalKeys.isEmpty()) {
-                return
+                return true
             }
             dirtySnapshot = ym.ymshop.storage.ShopStatsSnapshot(
                 playerRows = playerKeys.mapNotNull { key ->
@@ -185,9 +185,18 @@ class ShopDataStore(
             dirtyPlayerKeys.clear()
             dirtyGlobalEntryIds.clear()
         }
-        backend.saveShopChanges(shopId, dirtySnapshot, playerKeys, globalKeys)
-        if (waitForCompletion) {
-            backend.flush()
+        return if (waitForCompletion) {
+            val persisted = backend.saveShopChangesStrict(shopId, dirtySnapshot, playerKeys, globalKeys)
+            if (!persisted) {
+                synchronized(lock) {
+                    dirtyPlayerKeys += playerKeys
+                    dirtyGlobalEntryIds += globalKeys
+                }
+            }
+            persisted
+        } else {
+            backend.saveShopChanges(shopId, dirtySnapshot, playerKeys, globalKeys)
+            true
         }
     }
 

@@ -23,6 +23,13 @@ interface ShopStatsRepository {
         dirtyPlayerKeys: Set<ShopPlayerStatsKey>,
         dirtyGlobalEntryIds: Set<String>
     )
+
+    fun saveShopChangesStrict(
+        shopId: String,
+        snapshot: ShopStatsSnapshot,
+        dirtyPlayerKeys: Set<ShopPlayerStatsKey>,
+        dirtyGlobalEntryIds: Set<String>
+    ): Boolean
 }
 
 interface PlayerDataBackend : FavoriteRepository, DailyTradeRepository, ShopStatsRepository {
@@ -31,4 +38,15 @@ interface PlayerDataBackend : FavoriteRepository, DailyTradeRepository, ShopStat
     fun flush()
 
     fun close()
+
+    override fun saveShopChangesStrict(
+        shopId: String,
+        snapshot: ShopStatsSnapshot,
+        dirtyPlayerKeys: Set<ShopPlayerStatsKey>,
+        dirtyGlobalEntryIds: Set<String>
+    ): Boolean {
+        saveShopChanges(shopId, snapshot, dirtyPlayerKeys, dirtyGlobalEntryIds)
+        flush()
+        return true
+    }
 }

@@ -173,38 +173,33 @@ class SqlPlayerDataBackend(
             return
         }
         submitWrite("shop:$shopId") { connection ->
-            if (playerRows.isNotEmpty()) {
-                connection.prepareStatement(dialect.upsertPlayerStatsSql).use { statement ->
-                    playerRows.forEach { (key, row) ->
-                        statement.setString(1, shopId)
-                        statement.setString(2, key.playerId.toString())
-                        statement.setString(3, key.entryId)
-                        statement.setLong(4, row.total)
-                        statement.setLong(5, row.buy)
-                        statement.setLong(6, row.sell)
-                        statement.setLong(7, row.buyResetMarker)
-                        statement.setLong(8, row.sellResetMarker)
-                        statement.addBatch()
-                    }
-                    statement.executeBatch()
-                }
-            }
-            if (globalRows.isNotEmpty()) {
-                connection.prepareStatement(dialect.upsertGlobalStatsSql).use { statement ->
-                    globalRows.forEach { (entryId, row) ->
-                        statement.setString(1, shopId)
-                        statement.setString(2, entryId)
-                        statement.setLong(3, row.total)
-                        statement.setLong(4, row.buy)
-                        statement.setLong(5, row.sell)
-                        statement.setLong(6, row.buyResetMarker)
-                        statement.setLong(7, row.sellResetMarker)
-                        statement.addBatch()
-                    }
-                    statement.executeBatch()
-                }
-            }
+            writeShopChanges(connection, shopId, playerRows, globalRows)
         }
+    }
+
+    override fun saveShopChangesStrict(
+        shopId: String,
+        snapshot: ShopStatsSnapshot,
+        dirtyPlayerKeys: Set<ShopPlayerStatsKey>,
+        dirtyGlobalEntryIds: Set<String>
+    ): Boolean {
+        val playerRows = dirtyPlayerKeys.mapNotNull { key -> snapshot.playerRows[key]?.copy()?.let { key to it } }
+        val globalRows = dirtyGlobalEntryIds.mapNotNull { entryId -> snapshot.globalRows[entryId]?.copy()?.let { entryId to it } }
+        if (playerRows.isEmpty() && globalRows.isEmpty()) {
+            return true
+        }
+        val future = executor.submit<Boolean> {
+            dataSource.connection.use { connection ->
+                writeShopChanges(connection, shopId, playerRows, globalRows)
+            }
+            true
+        }
+        return runCatching { future.get(30, TimeUnit.SECONDS) }
+            .onFailure { ex ->
+                plugin.logger.severe("Ymshop SQL strict stats write failed [shop:$shopId]: ${ex.message}")
+                ex.printStackTrace()
+            }
+            .getOrDefault(false)
     }
 
     override fun flush() {
@@ -260,6 +255,54 @@ class SqlPlayerDataBackend(
                 plugin.logger.severe("Ymshop SQL write failed [$label]: ${ex.message}")
                 ex.printStackTrace()
             }
+        }
+    }
+
+    private fun writeShopChanges(
+        connection: Connection,
+        shopId: String,
+        playerRows: List<Pair<ShopPlayerStatsKey, ShopStatsRow>>,
+        globalRows: List<Pair<String, ShopStatsRow>>
+    ) {
+        connection.autoCommit = false
+        try {
+            if (playerRows.isNotEmpty()) {
+                connection.prepareStatement(dialect.upsertPlayerStatsSql).use { statement ->
+                    playerRows.forEach { (key, row) ->
+                        statement.setString(1, shopId)
+                        statement.setString(2, key.playerId.toString())
+                        statement.setString(3, key.entryId)
+                        statement.setLong(4, row.total)
+                        statement.setLong(5, row.buy)
+                        statement.setLong(6, row.sell)
+                        statement.setLong(7, row.buyResetMarker)
+                        statement.setLong(8, row.sellResetMarker)
+                        statement.addBatch()
+                    }
+                    statement.executeBatch()
+                }
+            }
+            if (globalRows.isNotEmpty()) {
+                connection.prepareStatement(dialect.upsertGlobalStatsSql).use { statement ->
+                    globalRows.forEach { (entryId, row) ->
+                        statement.setString(1, shopId)
+                        statement.setString(2, entryId)
+                        statement.setLong(3, row.total)
+                        statement.setLong(4, row.buy)
+                        statement.setLong(5, row.sell)
+                        statement.setLong(6, row.buyResetMarker)
+                        statement.setLong(7, row.sellResetMarker)
+                        statement.addBatch()
+                    }
+                    statement.executeBatch()
+                }
+            }
+            connection.commit()
+        } catch (ex: Exception) {
+            connection.rollback()
+            throw ex
+        } finally {
+            connection.autoCommit = true
         }
     }
 

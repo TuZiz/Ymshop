@@ -6,6 +6,8 @@ Never commit `.mcp.json`, database passwords, API keys, tokens, private service 
 
 `CUSTOM` currencies execute configured commands and Minecraft command dispatch does not provide a reliable transaction result. Ymshop treats those currencies as weak-consistency integrations: it will still attempt compensation, but strict transaction guarantees are only available for integrations that return synchronous success or failure, such as Vault and PlayerPoints.
 
+For high-value shops on MySQL/PostgreSQL, set `settings.strict-persistence: true` in that shop file to require the SQL worker to confirm trade-stat persistence before Ymshop reports the trade as fully successful. Keep it disabled for normal shops to avoid adding database latency to the trade path.
+
 一个面向 Spigot / Folia 的商店插件，GUI 基于 `easygui-bundle-1.0-SNAPSHOT.jar`。
 
 ## 默认结构

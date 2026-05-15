@@ -155,6 +155,7 @@ data class ShopSettings(
     val buyMore: Boolean,
     val hideMessage: Boolean,
     val permission: String?,
+    val strictPersistence: Boolean,
     val tradeAmounts: ShopTradeAmountSettings
 )
 
