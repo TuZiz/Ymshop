@@ -14,53 +14,60 @@ class ShopDataStore(
 ) {
 
     private val snapshot = backend.loadShopSnapshot(shopId)
+    private val lock = Any()
     private val dirtyPlayerKeys = linkedSetOf<ShopPlayerStatsKey>()
     private val dirtyGlobalEntryIds = linkedSetOf<String>()
 
     fun stats(entryId: String, playerId: UUID): EntryStats {
-        val playerRow = snapshot.playerRows[ShopPlayerStatsKey(playerId, entryId)] ?: ShopStatsRow()
-        val globalRow = snapshot.globalRows[entryId] ?: ShopStatsRow()
-        return EntryStats(
-            playerTotal = playerRow.total,
-            playerBuy = playerRow.buy,
-            playerSell = playerRow.sell,
-            globalTotal = globalRow.total,
-            globalBuy = globalRow.buy,
-            globalSell = globalRow.sell
-        )
+        return synchronized(lock) {
+            val playerRow = snapshot.playerRows[ShopPlayerStatsKey(playerId, entryId)] ?: ShopStatsRow()
+            val globalRow = snapshot.globalRows[entryId] ?: ShopStatsRow()
+            EntryStats(
+                playerTotal = playerRow.total,
+                playerBuy = playerRow.buy,
+                playerSell = playerRow.sell,
+                globalTotal = globalRow.total,
+                globalBuy = globalRow.buy,
+                globalSell = globalRow.sell
+            )
+        }
     }
 
     fun record(entryId: String, playerId: UUID, mode: TradeMode, amount: Int) {
-        val playerRow = playerRow(playerId, entryId)
-        val globalRow = globalRow(entryId)
-        playerRow.total += amount
-        globalRow.total += amount
+        synchronized(lock) {
+            val playerRow = playerRow(playerId, entryId)
+            val globalRow = globalRow(entryId)
+            playerRow.total += amount
+            globalRow.total += amount
 
-        when (mode) {
-            TradeMode.BUY -> {
-                playerRow.buy += amount
-                globalRow.buy += amount
+            when (mode) {
+                TradeMode.BUY -> {
+                    playerRow.buy += amount
+                    globalRow.buy += amount
+                }
+
+                TradeMode.SELL -> {
+                    playerRow.sell += amount
+                    globalRow.sell += amount
+                }
+
+                TradeMode.BOTH -> Unit
             }
-
-            TradeMode.SELL -> {
-                playerRow.sell += amount
-                globalRow.sell += amount
-            }
-
-            TradeMode.BOTH -> Unit
+            markDirty(playerId, entryId)
+            markDirty(entryId)
         }
-        markDirty(playerId, entryId)
-        markDirty(entryId)
         flushDirty(waitForCompletion = false)
     }
 
     fun sideResetMarker(entryId: String, playerId: UUID, side: TradeSide, scope: ResetScope): Long {
-        val row = if (scope == ResetScope.PLAYER) {
-            snapshot.playerRows[ShopPlayerStatsKey(playerId, entryId)] ?: ShopStatsRow()
-        } else {
-            snapshot.globalRows[entryId] ?: ShopStatsRow()
+        return synchronized(lock) {
+            val row = if (scope == ResetScope.PLAYER) {
+                snapshot.playerRows[ShopPlayerStatsKey(playerId, entryId)] ?: ShopStatsRow()
+            } else {
+                snapshot.globalRows[entryId] ?: ShopStatsRow()
+            }
+            if (side == TradeSide.BUY) row.buyResetMarker else row.sellResetMarker
         }
-        return if (side == TradeSide.BUY) row.buyResetMarker else row.sellResetMarker
     }
 
     fun setSideResetMarker(
@@ -71,16 +78,18 @@ class ShopDataStore(
         marker: Long,
         save: Boolean = true
     ) {
-        val row = if (scope == ResetScope.PLAYER) playerRow(playerId, entryId) else globalRow(entryId)
-        if (side == TradeSide.BUY) {
-            row.buyResetMarker = marker
-        } else {
-            row.sellResetMarker = marker
-        }
-        if (scope == ResetScope.PLAYER) {
-            markDirty(playerId, entryId)
-        } else {
-            markDirty(entryId)
+        synchronized(lock) {
+            val row = if (scope == ResetScope.PLAYER) playerRow(playerId, entryId) else globalRow(entryId)
+            if (side == TradeSide.BUY) {
+                row.buyResetMarker = marker
+            } else {
+                row.sellResetMarker = marker
+            }
+            if (scope == ResetScope.PLAYER) {
+                markDirty(playerId, entryId)
+            } else {
+                markDirty(entryId)
+            }
         }
         if (save) {
             flushDirty(waitForCompletion = false)
@@ -88,30 +97,34 @@ class ShopDataStore(
     }
 
     fun sideCount(entryId: String, playerId: UUID, side: TradeSide, scope: ResetScope): Long {
-        return when (scope) {
-            ResetScope.PLAYER -> {
-                val row = snapshot.playerRows[ShopPlayerStatsKey(playerId, entryId)] ?: ShopStatsRow()
-                if (side == TradeSide.BUY) row.buy else row.sell
-            }
+        return synchronized(lock) {
+            when (scope) {
+                ResetScope.PLAYER -> {
+                    val row = snapshot.playerRows[ShopPlayerStatsKey(playerId, entryId)] ?: ShopStatsRow()
+                    if (side == TradeSide.BUY) row.buy else row.sell
+                }
 
-            ResetScope.GLOBAL -> {
-                val row = snapshot.globalRows[entryId] ?: ShopStatsRow()
-                if (side == TradeSide.BUY) row.buy else row.sell
+                ResetScope.GLOBAL -> {
+                    val row = snapshot.globalRows[entryId] ?: ShopStatsRow()
+                    if (side == TradeSide.BUY) row.buy else row.sell
+                }
             }
         }
     }
 
     fun resetSide(entryId: String, playerId: UUID, side: TradeSide, scope: ResetScope, save: Boolean = true) {
-        val row = if (scope == ResetScope.PLAYER) playerRow(playerId, entryId) else globalRow(entryId)
-        if (side == TradeSide.BUY) {
-            row.buy = 0L
-        } else {
-            row.sell = 0L
-        }
-        if (scope == ResetScope.PLAYER) {
-            markDirty(playerId, entryId)
-        } else {
-            markDirty(entryId)
+        synchronized(lock) {
+            val row = if (scope == ResetScope.PLAYER) playerRow(playerId, entryId) else globalRow(entryId)
+            if (side == TradeSide.BUY) {
+                row.buy = 0L
+            } else {
+                row.sell = 0L
+            }
+            if (scope == ResetScope.PLAYER) {
+                markDirty(playerId, entryId)
+            } else {
+                markDirty(entryId)
+            }
         }
         if (save) {
             flushDirty(waitForCompletion = false)
@@ -119,10 +132,12 @@ class ShopDataStore(
     }
 
     fun playerIds(entryId: String): Set<UUID> {
-        return snapshot.playerRows.keys.asSequence()
-            .filter { it.entryId == entryId }
-            .map { it.playerId }
-            .toSet()
+        return synchronized(lock) {
+            snapshot.playerRows.keys.asSequence()
+                .filter { it.entryId == entryId }
+                .map { it.playerId }
+                .toSet()
+        }
     }
 
     fun save() {
@@ -150,11 +165,27 @@ class ShopDataStore(
     }
 
     private fun flushDirty(waitForCompletion: Boolean) {
-        val playerKeys = dirtyPlayerKeys.toSet()
-        val globalKeys = dirtyGlobalEntryIds.toSet()
-        dirtyPlayerKeys.clear()
-        dirtyGlobalEntryIds.clear()
-        backend.saveShopChanges(shopId, snapshot, playerKeys, globalKeys)
+        val playerKeys: Set<ShopPlayerStatsKey>
+        val globalKeys: Set<String>
+        val dirtySnapshot: ym.ymshop.storage.ShopStatsSnapshot
+        synchronized(lock) {
+            playerKeys = dirtyPlayerKeys.toSet()
+            globalKeys = dirtyGlobalEntryIds.toSet()
+            if (playerKeys.isEmpty() && globalKeys.isEmpty()) {
+                return
+            }
+            dirtySnapshot = ym.ymshop.storage.ShopStatsSnapshot(
+                playerRows = playerKeys.mapNotNull { key ->
+                    snapshot.playerRows[key]?.copy()?.let { key to it }
+                }.toMap(linkedMapOf()),
+                globalRows = globalKeys.mapNotNull { entryId ->
+                    snapshot.globalRows[entryId]?.copy()?.let { entryId to it }
+                }.toMap(linkedMapOf())
+            )
+            dirtyPlayerKeys.clear()
+            dirtyGlobalEntryIds.clear()
+        }
+        backend.saveShopChanges(shopId, dirtySnapshot, playerKeys, globalKeys)
         if (waitForCompletion) {
             backend.flush()
         }

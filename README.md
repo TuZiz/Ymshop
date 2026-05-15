@@ -1,5 +1,11 @@
 # Ymshop
 
+## Security Notes
+
+Never commit `.mcp.json`, database passwords, API keys, tokens, private service URLs, or local absolute paths. Use `.mcp.example.json` only as a placeholder template and keep real credentials outside Git.
+
+`CUSTOM` currencies execute configured commands and Minecraft command dispatch does not provide a reliable transaction result. Ymshop treats those currencies as weak-consistency integrations: it will still attempt compensation, but strict transaction guarantees are only available for integrations that return synchronous success or failure, such as Vault and PlayerPoints.
+
 一个面向 Spigot / Folia 的商店插件，GUI 基于 `easygui-bundle-1.0-SNAPSHOT.jar`。
 
 ## 默认结构

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "example-service": {
+      "command": "node",
+      "args": [
+        "path/to/server.js"
+      ],
+      "env": {
+        "API_KEY": "replace-with-your-key",
+        "SERVICE_URL": "https://example.invalid"
+      }
+    }
+  }
+}

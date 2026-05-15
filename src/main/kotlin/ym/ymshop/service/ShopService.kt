@@ -35,13 +35,21 @@ class ShopService(
     private val itemService: ItemService,
     private val currencyService: CurrencyService,
     private val messageService: MessageService,
-    private val playerDataBackend: PlayerDataBackend
+    private val playerDataBackend: PlayerDataBackend,
+    private val tradeLogService: TradeLogService
 ) {
 
+    @Volatile
     private lateinit var globalConfig: GlobalConfig
-    private val shops = linkedMapOf<String, ShopDefinition>()
-    private val dataStores = linkedMapOf<String, ShopDataStore>()
+
+    @Volatile
+    private var shops: Map<String, ShopDefinition> = emptyMap()
+
+    @Volatile
+    private var dataStores: Map<String, ShopDataStore> = emptyMap()
+
     private val dailyTradeStore = PlayerDailyTradeStore(playerDataBackend)
+    private val tradeLocks = TradeLockManager()
     private var zoneId: ZoneId = ZoneId.systemDefault()
     private var scheduledResetTask: PlatformExecutor.TaskHandle? = null
     private val resetListeners = mutableListOf<() -> Unit>()
@@ -103,22 +111,27 @@ class ShopService(
         val balanceText: String?
     )
 
+    @Synchronized
     fun reload() {
-        cancelScheduledResetTask()
         dataStores.values.forEach(ShopDataStore::save)
-        globalConfig = configLoader.loadGlobalConfig()
-        zoneId = globalConfig.resetZoneId
+        val loadedGlobalConfig = configLoader.loadGlobalConfig()
+        val loadedZoneId = loadedGlobalConfig.resetZoneId
         val layouts = configLoader.loadLayouts()
         layouts.values.forEach(::validateLayout)
-        shops.clear()
-        dataStores.clear()
+        val loadedShops = linkedMapOf<String, ShopDefinition>()
+        val loadedStores = linkedMapOf<String, ShopDataStore>()
 
         configLoader.loadShops(layouts).forEach { shop ->
-            validateShop(shop)
-            shops[shop.id.lowercase()] = shop
-            dataStores[shop.id.lowercase()] = ShopDataStore(shop.id, playerDataBackend)
+            validateShop(shop, loadedGlobalConfig)
+            loadedShops[shop.id.lowercase()] = shop
+            loadedStores[shop.id.lowercase()] = ShopDataStore(shop.id, playerDataBackend)
         }
 
+        cancelScheduledResetTask()
+        globalConfig = loadedGlobalConfig
+        zoneId = loadedZoneId
+        shops = loadedShops
+        dataStores = loadedStores
         val now = Instant.now()
         refreshAllResets(now, logSummary = true)
         logResetTimezone(now)
@@ -248,43 +261,53 @@ class ShopService(
             return TradeResult(false, "entry-not-sellable", mapOf("entry" to entry.id))
         }
 
-        val currency = currency(entry.currencyId)
-        val store = store(shop.id)
-        refreshResets(shop, entry, player.uniqueId)
-        val stats = store.stats(entry.id, player.uniqueId)
-        val safeMultiplier = multiplier.coerceAtLeast(1)
-        val configuredItem = tradeItem(entry, side)
-        val quantity = configuredItem.amount * safeMultiplier
-        val totalPrice = unitPrice(entry, side) * safeMultiplier
-        val replacements = baseReplacements(
-            createEntryRenderContext(
-                player = player,
-                shop = shop,
-                entry = entry,
-                preparation = RenderPreparation(
-                    statsByEntryId = mapOf(entry.id.lowercase() to stats),
-                    balanceTextsByCurrencyId = mapOf(currency.id.lowercase() to currencyService.currentBalanceText(player, currency))
-                ),
-                times = safeMultiplier,
-                requestedSide = side
+        return tradeLocks.withEntryLock(shop.id, entry.id) {
+            val currency = currency(entry.currencyId)
+            val store = store(shop.id)
+            refreshResets(shop, entry, player.uniqueId)
+            val stats = store.stats(entry.id, player.uniqueId)
+            val safeMultiplier = multiplier.coerceAtLeast(1)
+            val configuredItem = tradeItem(entry, side)
+            val quantity = configuredItem.amount * safeMultiplier
+            val totalPrice = unitPrice(entry, side) * safeMultiplier
+            val replacements = baseReplacements(
+                createEntryRenderContext(
+                    player = player,
+                    shop = shop,
+                    entry = entry,
+                    preparation = RenderPreparation(
+                        statsByEntryId = mapOf(entry.id.lowercase() to stats),
+                        balanceTextsByCurrencyId = mapOf(currency.id.lowercase() to currencyService.currentBalanceText(player, currency))
+                    ),
+                    times = safeMultiplier,
+                    requestedSide = side
+                )
             )
-        )
 
-        checkLimits(entry, stats, quantity, player, side)?.let { return it }
+            val resourceCheck = when (side) {
+                TradeSide.BUY -> checkBuyResources(player, currency, totalPrice, replacements)
+                TradeSide.SELL -> checkSellResources(player, entry, quantity, replacements)
+            }
+            if (resourceCheck != null) {
+                return@withEntryLock resourceCheck
+            }
 
-        val result = when (side) {
-            TradeSide.BUY -> executeBuy(player, entry, currency, totalPrice, quantity, replacements)
-            TradeSide.SELL -> executeSell(player, entry, currency, totalPrice, quantity, replacements)
+            checkLimits(entry, stats, quantity, player, side)?.let { return@withEntryLock it }
+
+            val result = when (side) {
+                TradeSide.BUY -> executeBuy(player, shop, entry, currency, totalPrice, quantity, replacements)
+                TradeSide.SELL -> executeSell(player, shop, entry, currency, totalPrice, quantity, replacements)
+            }
+            if (!result.success) {
+                return@withEntryLock result
+            }
+
+            store.record(entry.id, player.uniqueId, if (side == TradeSide.BUY) TradeMode.BUY else TradeMode.SELL, quantity)
+            dailyTradeStore.record(player.uniqueId, LocalDate.now(zoneId), currency.id, side, totalPrice)
+            logTrade(player, shop, entry, side, quantity, unitPrice(entry, side), totalPrice, currency)
+            currencyService.dispatchCommands(player, entry.successCommands, replacements)
+            TradeResult(true, if (side == TradeSide.BUY) "buy-success" else "sell-success", replacements)
         }
-        if (!result.success) {
-            return result
-        }
-
-        store.record(entry.id, player.uniqueId, if (side == TradeSide.BUY) TradeMode.BUY else TradeMode.SELL, quantity)
-        dailyTradeStore.record(player.uniqueId, LocalDate.now(zoneId), currency.id, side, totalPrice)
-        appendTradeLog(player, shop, entry, side, quantity, unitPrice(entry, side), totalPrice, currency)
-        currencyService.dispatchCommands(player, entry.successCommands, replacements)
-        return TradeResult(true, if (side == TradeSide.BUY) "buy-success" else "sell-success", replacements)
     }
 
     fun renderReplacements(player: Player, shop: ShopDefinition, entry: ShopEntry): Map<String, String> {
@@ -345,6 +368,7 @@ class ShopService(
 
     private fun executeBuy(
         player: Player,
+        shop: ShopDefinition,
         entry: ShopEntry,
         currency: CurrencyDefinition,
         totalPrice: Long,
@@ -358,13 +382,33 @@ class ShopService(
 
         when (entry.reward.type) {
             RewardType.ICON_ITEM,
-            RewardType.CONFIG_ITEM -> itemService.giveConfiguredItem(
-                player,
-                tradeItem(entry, TradeSide.BUY),
-                totalAmount,
-                replacements
-            )
+            RewardType.CONFIG_ITEM -> {
+                val gaveItem = itemService.tryGiveConfiguredItem(
+                    player,
+                    tradeItem(entry, TradeSide.BUY),
+                    totalAmount,
+                    replacements
+                )
+                if (!gaveItem) {
+                    val refund = currencyService.give(player, currency, totalPrice, replacements)
+                    if (!refund.success) {
+                        logCompensation(
+                            player = player,
+                            shop = shop,
+                            entry = entry,
+                            side = TradeSide.BUY,
+                            amount = totalAmount,
+                            currency = currency,
+                            totalPrice = totalPrice,
+                            reason = "reward item delivery failed; refund failed: ${refund.messageKey}"
+                        )
+                    }
+                    return TradeResult(false, "give-item-failed", replacements)
+                }
+            }
 
+            // Command rewards and CUSTOM currency commands are weak-consistency integrations:
+            // Bukkit command dispatch does not expose a reliable transaction result.
             RewardType.COMMANDS -> repeat(replacements["times"]?.toIntOrNull() ?: 1) {
                 currencyService.dispatchCommands(player, entry.reward.commands, replacements)
             }
@@ -376,6 +420,7 @@ class ShopService(
 
     private fun executeSell(
         player: Player,
+        shop: ShopDefinition,
         entry: ShopEntry,
         currency: CurrencyDefinition,
         totalPrice: Long,
@@ -394,7 +439,58 @@ class ShopService(
         if (!itemService.removeMatching(player.inventory, sellTemplate, totalAmount)) {
             return TradeResult(false, "remove-item-failed", replacements)
         }
-        return currencyService.give(player, currency, totalPrice, replacements)
+        val paid = currencyService.give(player, currency, totalPrice, replacements)
+        if (!paid.success) {
+            val returned = itemService.tryGiveConfiguredItem(player, tradeItem(entry, TradeSide.SELL), totalAmount, replacements)
+            if (!returned) {
+                logCompensation(
+                    player = player,
+                    shop = shop,
+                    entry = entry,
+                    side = TradeSide.SELL,
+                    amount = totalAmount,
+                    currency = currency,
+                    totalPrice = totalPrice,
+                    reason = "currency give failed: ${paid.messageKey}; item return failed"
+                )
+            }
+            return paid
+        }
+        return paid
+    }
+
+    private fun checkBuyResources(
+        player: Player,
+        currency: CurrencyDefinition,
+        totalPrice: Long,
+        replacements: Map<String, String>
+    ): TradeResult? {
+        val canAfford = currencyService.canAfford(player, currency, totalPrice)
+            ?: return null
+        return if (canAfford) {
+            null
+        } else {
+            TradeResult(false, "not-enough-currency", replacements + mapOf("currency" to currency.displayName))
+        }
+    }
+
+    private fun checkSellResources(
+        player: Player,
+        entry: ShopEntry,
+        totalAmount: Int,
+        replacements: Map<String, String>
+    ): TradeResult? {
+        val sellTemplate = itemService.buildItem(tradeItem(entry, TradeSide.SELL), null)
+        val count = itemService.countMatching(player.inventory, sellTemplate)
+        return if (count >= totalAmount) {
+            null
+        } else {
+            TradeResult(
+                false,
+                "not-enough-items",
+                replacements + mapOf("need" to totalAmount.toString(), "has" to count.toString())
+            )
+        }
     }
 
     private fun checkLimits(entry: ShopEntry, stats: EntryStats, amount: Int, player: Player, side: TradeSide): TradeResult? {
@@ -944,13 +1040,13 @@ class ShopService(
         }
     }
 
-    private fun validateShop(shop: ShopDefinition) {
+    private fun validateShop(shop: ShopDefinition, config: GlobalConfig = globalConfig) {
         require(shop.entries.map { it.id.lowercase() }.distinct().size == shop.entries.size) {
             "${shop.sourceFile} -> duplicate entry ids"
         }
 
         shop.entries.forEach { entry ->
-            require(globalConfig.currencies.containsKey(entry.currencyId)) {
+            require(config.currencies.containsKey(entry.currencyId)) {
                 "${shop.sourceFile} -> items.${entry.id} -> unknown currency ${entry.currencyId}"
             }
             require(entry.supportsBuy || entry.supportsSell) {
@@ -1267,8 +1363,7 @@ class ShopService(
         val GLOBAL_SCOPE_PLAYER_ID: java.util.UUID = java.util.UUID(0L, 0L)
     }
 
-    @Synchronized
-    private fun appendTradeLog(
+    private fun logTrade(
         player: Player,
         shop: ShopDefinition,
         entry: ShopEntry,
@@ -1278,38 +1373,55 @@ class ShopService(
         totalPrice: Long,
         currency: CurrencyDefinition
     ) {
-        val now = Instant.now().atZone(zoneId)
-        val folder = plugin.dataFolder.resolve("logs")
-        folder.mkdirs()
-        val file = folder.resolve("trade-${now.toLocalDate()}.log")
-        val line = buildString {
-            append("[")
-            append(now.toLocalDate())
-            append(" ")
-            append(now.toLocalTime().withNano(0))
-            append("] ")
-            append("player=")
-            append(player.name)
-            append(" uuid=")
-            append(player.uniqueId)
-            append(" side=")
-            append(side.name)
-            append(" shop=")
-            append(shop.id)
-            append(" entry=")
-            append(entry.id)
-            append(" item=")
-            append(entry.icon.material)
-            append(" amount=")
-            append(amount)
-            append(" unit_price=")
-            append(unitPrice)
-            append(" total_price=")
-            append(totalPrice)
-            append(" currency=")
-            append(currency.id)
-        }
-        file.appendText(line + System.lineSeparator())
+        tradeLogService.logTrade(
+            TradeLogService.TradeLogEntry(
+                timestamp = Instant.now(),
+                zoneId = zoneId,
+                playerName = player.name,
+                playerId = player.uniqueId,
+                side = side,
+                shopId = shop.id,
+                entryId = entry.id,
+                itemInfo = itemInfo(entry, side),
+                amount = amount,
+                unitPrice = unitPrice,
+                totalPrice = totalPrice,
+                currencyId = currency.id
+            )
+        )
+    }
+
+    private fun logCompensation(
+        player: Player,
+        shop: ShopDefinition,
+        entry: ShopEntry,
+        side: TradeSide,
+        amount: Int,
+        currency: CurrencyDefinition,
+        totalPrice: Long,
+        reason: String
+    ) {
+        tradeLogService.logCompensation(
+            TradeLogService.CompensationLogEntry(
+                timestamp = Instant.now(),
+                zoneId = zoneId,
+                playerName = player.name,
+                playerId = player.uniqueId,
+                side = side,
+                shopId = shop.id,
+                entryId = entry.id,
+                itemInfo = itemInfo(entry, side),
+                amount = amount,
+                currencyId = currency.id,
+                totalPrice = totalPrice,
+                failureReason = reason
+            )
+        )
+    }
+
+    private fun itemInfo(entry: ShopEntry, side: TradeSide): String {
+        val item = tradeItem(entry, side)
+        return "${item.material}x${item.amount}"
     }
 
     private data class ResetSummary(

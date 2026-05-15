@@ -49,24 +49,44 @@ class YmShopCommand(private val plugin: Ymshop) : CommandExecutor, TabCompleter 
     }
 
     private fun handleReload(sender: CommandSender): Boolean {
-        return runCatching {
+        plugin.platformExecutor.runGlobalAsync {
             plugin.shopService.reload()
-            plugin.messageService.send(sender, "reload-success")
-            true
-        }.getOrElse { ex ->
-            plugin.logger.severe("Reload failed: ${ex.message}")
-            plugin.messageService.send(sender, "reload-failed", mapOf("reason" to (ex.message ?: ex.javaClass.simpleName)))
-            true
+        }.whenComplete { _, ex ->
+            plugin.platformExecutor.runForSender(sender) {
+                if (ex == null) {
+                    plugin.messageService.send(sender, "reload-success")
+                } else {
+                    val cause = ex.cause ?: ex
+                    plugin.logger.severe("Reload failed: ${cause.message}")
+                    plugin.messageService.send(
+                        sender,
+                        "reload-failed",
+                        mapOf("reason" to (cause.message ?: cause.javaClass.simpleName))
+                    )
+                }
+            }
         }
+        return true
     }
 
     private fun handleOpen(sender: CommandSender, args: Array<out String>): Boolean {
-        if (!sender.hasPermission("ymshop.open")) {
-            plugin.messageService.send(sender, "no-permission")
-            return true
-        }
         if (args.size < 2) {
             plugin.messageService.sendRaw(sender, "&cUsage: /ymshop open <shop> [player]")
+            return true
+        }
+
+        val openingOther = args.size >= 3
+        if (openingOther) {
+            if (sender is Player && !sender.hasPermission("ymshop.open.others")) {
+                plugin.messageService.send(sender, "no-permission")
+                return true
+            }
+            if (sender !is Player && !sender.hasPermission("ymshop.open.others") && !sender.isOp) {
+                plugin.messageService.send(sender, "no-permission")
+                return true
+            }
+        } else if (!sender.hasPermission("ymshop.open")) {
+            plugin.messageService.send(sender, "no-permission")
             return true
         }
 
@@ -137,7 +157,11 @@ class YmShopCommand(private val plugin: Ymshop) : CommandExecutor, TabCompleter 
         return when (args.size) {
             1 -> listOf("reload", "open", "favorites", "itemmodel").filter { it.startsWith(args[0], ignoreCase = true) }
             2 -> if (args[0].equals("open", ignoreCase = true)) plugin.shopService.shopIds().filter { it.startsWith(args[1], ignoreCase = true) } else emptyList()
-            3 -> if (args[0].equals("open", ignoreCase = true)) plugin.server.onlinePlayers.map { it.name }.filter { it.startsWith(args[2], ignoreCase = true) } else emptyList()
+            3 -> if (args[0].equals("open", ignoreCase = true) && sender.hasPermission("ymshop.open.others")) {
+                plugin.server.onlinePlayers.map { it.name }.filter { it.startsWith(args[2], ignoreCase = true) }
+            } else {
+                emptyList()
+            }
             else -> emptyList()
         }
     }

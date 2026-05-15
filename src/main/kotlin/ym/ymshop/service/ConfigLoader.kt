@@ -2,6 +2,7 @@ package ym.ymshop.service
 
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.Material
 import org.bukkit.plugin.java.JavaPlugin
 import ym.ymshop.model.ButtonActionDefinition
 import ym.ymshop.model.ButtonActionType
@@ -39,6 +40,7 @@ class ConfigLoader(private val plugin: JavaPlugin) {
         plugin.reloadConfig()
         val currenciesSection = plugin.config.getConfigurationSection("currencies")
         val currencies = currenciesSection?.getKeys(false)?.associateWith { id ->
+            validateId(id, "config.yml -> currencies.$id")
             val section = requireNotNull(currenciesSection.getConfigurationSection(id)) {
                 "config.yml -> currencies.$id -> missing section"
             }
@@ -102,6 +104,7 @@ class ConfigLoader(private val plugin: JavaPlugin) {
         val yaml = YamlConfiguration.loadConfiguration(file)
         val layoutId = file.nameWithoutExtension
         val source = "layouts/${file.name}"
+        validateId(layoutId, "$source -> layout id")
         val size = yaml.getInt("size", 54)
         require(size in 9..54 && size % 9 == 0) { "size must be a multiple of 9 between 9 and 54" }
         val rows = size / 9
@@ -145,10 +148,12 @@ class ConfigLoader(private val plugin: JavaPlugin) {
         val yaml = YamlConfiguration.loadConfiguration(file)
         val shopId = file.nameWithoutExtension
         val source = "shops/${file.name}"
+        validateId(shopId, "$source -> shop id")
         val settingsSection = yaml.getConfigurationSection("settings")
             ?: error("$source -> settings missing")
         val menuId = settingsSection.getString("menu")
             ?: error("$source -> settings.menu missing")
+        validateId(menuId, "$source -> settings.menu")
         val layout = layouts[menuId.lowercase()]
             ?: error("$source -> settings.menu references missing layout $menuId")
 
@@ -178,6 +183,7 @@ class ConfigLoader(private val plugin: JavaPlugin) {
 
     private fun loadEntry(symbol: Char, rawKey: String, section: ConfigurationSection, path: String): ShopEntry {
         val id = section.getString("id")?.takeIf { it.isNotBlank() } ?: rawKey
+        validateId(id, "$path -> id")
         val explicitMode = section.getString("mode")?.takeIf { it.isNotBlank() }?.let {
             runCatching { TradeMode.valueOf(it.uppercase()) }
                 .getOrElse { throw IllegalArgumentException("$path -> mode invalid: $it") }
@@ -203,6 +209,7 @@ class ConfigLoader(private val plugin: JavaPlugin) {
         val currencyId = section.getString("currency")
             ?: section.getString("currency-id")
             ?: error("$path -> missing currency")
+        validateId(currencyId, "$path -> currency")
 
         return ShopEntry(
             id = id,
@@ -235,6 +242,7 @@ class ConfigLoader(private val plugin: JavaPlugin) {
     }
 
     private fun loadCurrency(id: String, section: ConfigurationSection, path: String): CurrencyDefinition {
+        validateId(id, "$path -> id")
         val typeName = section.getString("type", "PLAYERPOINTS") ?: "PLAYERPOINTS"
         val type = runCatching { CurrencyType.valueOf(typeName.uppercase()) }
             .getOrElse { throw IllegalArgumentException("$path -> type invalid: $typeName") }
@@ -249,29 +257,42 @@ class ConfigLoader(private val plugin: JavaPlugin) {
     }
 
     private fun loadItem(section: ConfigurationSection, path: String): ConfiguredItem {
+        val material = section.getString("material") ?: error("$path -> material missing")
+        require(Material.matchMaterial(material) != null) { "$path -> material invalid: $material" }
+        val amount = section.getInt("amount", 1)
+        require(amount > 0) { "$path -> amount must be > 0" }
+        val customModelData = if (section.contains("custom-model-data")) section.getInt("custom-model-data") else null
+        customModelData?.let { require(it >= 0) { "$path -> custom-model-data must be >= 0" } }
+        val enchants = section.getConfigurationSection("enchants")
+            ?.getKeys(false)
+            ?.associateWith { key ->
+                val level = section.getInt("enchants.$key")
+                require(level > 0) { "$path -> enchants.$key must be > 0" }
+                level
+            }
+            .orEmpty()
         return ConfiguredItem(
-            material = section.getString("material") ?: error("$path -> material missing"),
-            amount = section.getInt("amount", 1).coerceAtLeast(1),
+            material = material,
+            amount = amount,
             name = section.getString("name") ?: section.getString("display-name"),
             lore = section.getStringList("lore"),
-            customModelData = if (section.contains("custom-model-data")) section.getInt("custom-model-data") else null,
+            customModelData = customModelData,
             itemModel = section.getString("item-model"),
             glow = section.getBoolean("glow", false),
             unbreakable = section.getBoolean("unbreakable", false),
-            enchants = section.getConfigurationSection("enchants")
-                ?.getKeys(false)
-                ?.associateWith { key -> section.getInt("enchants.$key") }
-                .orEmpty(),
+            enchants = enchants,
             flags = section.getStringList("flags")
         )
     }
 
     private fun compatIcon(section: ConfigurationSection, firstProduct: ConfiguredItem?, path: String): ConfiguredItem {
         val base = firstProduct ?: error("$path -> missing icon/products")
+        val customModelData = if (section.contains("custom-model-data")) section.getInt("custom-model-data") else base.customModelData
+        customModelData?.let { require(it >= 0) { "$path -> custom-model-data must be >= 0" } }
         return base.copy(
             name = section.getString("display-name") ?: base.name,
             lore = section.getStringList("lore").ifEmpty { base.lore },
-            customModelData = if (section.contains("custom-model-data")) section.getInt("custom-model-data") else base.customModelData,
+            customModelData = customModelData,
             itemModel = section.getString("item-model") ?: base.itemModel
         )
     }
@@ -325,10 +346,13 @@ class ConfigLoader(private val plugin: JavaPlugin) {
             return null
         }
         val raw = section.get(path) ?: return null
-        return when (raw) {
+        val price = when (raw) {
             is Number -> raw.toLong()
             else -> raw.toString().toDoubleOrNull()?.toLong()
         }
+        require(price != null) { "$path invalid price: $raw" }
+        require(price >= 0) { "$path must be >= 0" }
+        return price
     }
 
     private fun compatNestedPrice(section: ConfigurationSection, root: String): Long? {
@@ -394,7 +418,9 @@ class ConfigLoader(private val plugin: JavaPlugin) {
         if (section == null || !section.contains(path)) {
             return null
         }
-        return section.getLong(path)
+        val value = section.getLong(path)
+        require(value >= -1L) { "${section.currentPath}.$path must be >= -1" }
+        return value
     }
 
     private fun compatDirectionalLimits(section: ConfigurationSection, modeKey: String): CompatDirectionalLimits {
@@ -441,6 +467,11 @@ class ConfigLoader(private val plugin: JavaPlugin) {
             defaultLore = section?.getStringList("default-lore") ?: fallbackDefaultLore,
             appendLore = section?.getStringList("append-lore") ?: fallbackAppendLore
         )
+    }
+
+    private fun validateId(id: String, path: String) {
+        require(id.isNotBlank()) { "$path must not be empty" }
+        require(ID_PATTERN.matches(id)) { "$path must match ${ID_PATTERN.pattern}" }
     }
 
     private fun loadRenderText(section: ConfigurationSection?): RenderTextConfig {
@@ -559,4 +590,8 @@ class ConfigLoader(private val plugin: JavaPlugin) {
         val global: Long? = null,
         val player: Long? = null
     )
+
+    private companion object {
+        val ID_PATTERN = Regex("^[a-zA-Z0-9_-]+$")
+    }
 }

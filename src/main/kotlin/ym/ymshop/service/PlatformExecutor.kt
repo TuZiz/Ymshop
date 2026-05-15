@@ -1,16 +1,23 @@
 package ym.ymshop.service
 
 import org.bukkit.Bukkit
+import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitTask
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.function.Consumer
 
 class PlatformExecutor(private val plugin: JavaPlugin) {
 
     private val globalSchedulerMethod = runCatching { plugin.server.javaClass.getMethod("getGlobalRegionScheduler") }.getOrNull()
     private val isFolia = globalSchedulerMethod != null
+    private val asyncExecutor: ExecutorService = Executors.newCachedThreadPool { runnable ->
+        Thread(runnable, "Ymshop-Async-Worker").apply { isDaemon = true }
+    }
 
     fun runGlobal(task: () -> Unit) {
         if (!isFolia) {
@@ -76,6 +83,23 @@ class PlatformExecutor(private val plugin: JavaPlugin) {
         return ReflectiveTaskHandle(scheduledTask)
     }
 
+    fun runGlobalAsync(task: () -> Unit): CompletableFuture<Unit> {
+        return CompletableFuture.supplyAsync({
+            task()
+            Unit
+        }, asyncExecutor)
+    }
+
+    fun runForSender(sender: CommandSender, task: () -> Unit): Boolean {
+        val player = sender as? Player
+        return if (player != null) {
+            runForPlayer(player, task)
+        } else {
+            runGlobal(task)
+            true
+        }
+    }
+
     fun runForPlayer(player: Player, task: () -> Unit): Boolean {
         if (!isFolia) {
             if (Bukkit.isPrimaryThread()) {
@@ -95,6 +119,38 @@ class PlatformExecutor(private val plugin: JavaPlugin) {
             java.lang.Long.TYPE
         )
         return ReflectionSupport.invoke(executeMethod, scheduler, plugin, Runnable(task), null, 1L) as Boolean
+    }
+
+    fun runForPlayerLater(player: Player, delayTicks: Long, task: () -> Unit): Boolean {
+        val safeDelay = delayTicks.coerceAtLeast(1L)
+        if (!isFolia) {
+            plugin.server.scheduler.runTaskLater(plugin, Runnable(task), safeDelay)
+            return true
+        }
+
+        val scheduler = requireNotNull(ReflectionSupport.invoke(player.javaClass.getMethod("getScheduler"), player))
+        val runDelayedMethod = scheduler.javaClass.methods.firstOrNull { method ->
+            method.name == "runDelayed" &&
+                method.parameterCount == 4 &&
+                method.parameterTypes[0] == Plugin::class.java &&
+                Consumer::class.java.isAssignableFrom(method.parameterTypes[1]) &&
+                method.parameterTypes[2] == Runnable::class.java &&
+                method.parameterTypes[3] == java.lang.Long.TYPE
+        } ?: error("Folia player scheduler does not expose runDelayed")
+
+        val scheduledTask = ReflectionSupport.invoke(
+            runDelayedMethod,
+            scheduler,
+            plugin,
+            Consumer<Any> { task() },
+            null,
+            safeDelay
+        )
+        return scheduledTask != null
+    }
+
+    fun close() {
+        asyncExecutor.shutdown()
     }
 
     interface TaskHandle {

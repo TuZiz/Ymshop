@@ -13,6 +13,7 @@ import ym.ymshop.service.MessageService
 import ym.ymshop.service.PlatformExecutor
 import ym.ymshop.service.ShopGuiService
 import ym.ymshop.service.ShopService
+import ym.ymshop.service.TradeLogService
 import ym.ymshop.storage.PlayerDataBackend
 import ym.ymshop.storage.PlayerDataBackendFactory
 
@@ -33,6 +34,9 @@ class Ymshop : JavaPlugin() {
     lateinit var favoriteService: FavoriteService
         private set
 
+    lateinit var tradeLogService: TradeLogService
+        private set
+
     lateinit var playerDataBackend: PlayerDataBackend
         private set
 
@@ -49,6 +53,7 @@ class Ymshop : JavaPlugin() {
         messageService = MessageService(this)
         itemService = ItemService(this)
         currencyService = CurrencyService(this, platformExecutor)
+        tradeLogService = TradeLogService(this)
         playerDataBackend = runCatching { PlayerDataBackendFactory.create(this) }
             .getOrElse { ex ->
                 logger.severe("Failed to initialize player data backend: ${ex.message}")
@@ -66,7 +71,8 @@ class Ymshop : JavaPlugin() {
                 itemService,
                 currencyService,
                 messageService,
-                playerDataBackend
+                playerDataBackend,
+                tradeLogService
             )
             shopGuiService = ShopGuiService(this, platformExecutor, shopService, itemService, currencyService, favoriteService)
             shopService.addResetListener(shopGuiService::refreshOpenInventories)
@@ -90,11 +96,17 @@ class Ymshop : JavaPlugin() {
         if (::shopService.isInitialized) {
             shopService.close()
         }
+        if (::tradeLogService.isInitialized) {
+            tradeLogService.close()
+        }
         if (::favoriteService.isInitialized) {
             favoriteService.close()
         }
         if (::playerDataBackend.isInitialized) {
             playerDataBackend.close()
+        }
+        if (::platformExecutor.isInitialized) {
+            platformExecutor.close()
         }
     }
 

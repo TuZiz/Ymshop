@@ -115,6 +115,9 @@ gradle-app.setting
 run/
 runs/
 
+# Local MCP connector config. Never commit API keys, tokens, service URLs, or local absolute paths.
+.mcp.json
+
 # Root shops folder (user data)
 shops/
 

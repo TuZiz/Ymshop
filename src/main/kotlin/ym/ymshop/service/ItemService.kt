@@ -86,6 +86,18 @@ class ItemService(private val plugin: JavaPlugin) {
         }
     }
 
+    fun tryGiveConfiguredItem(
+        player: Player,
+        configuredItem: ConfiguredItem,
+        totalAmount: Int,
+        replacements: Map<String, String> = emptyMap()
+    ): Boolean {
+        return runCatching {
+            giveConfiguredItem(player, configuredItem, totalAmount, replacements)
+            true
+        }.getOrDefault(false)
+    }
+
     fun countMatching(inventory: PlayerInventory, template: ItemStack): Int {
         val compare = template.clone().apply { amount = 1 }
         return inventory.contents

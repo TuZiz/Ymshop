@@ -15,5 +15,7 @@ permissions:
     default: op
   ymshop.open:
     default: true
+  ymshop.open.others:
+    default: op
   ymshop.itemmodel:
     default: op

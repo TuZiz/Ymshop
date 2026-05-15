@@ -339,21 +339,26 @@ class ShopGuiService(
                 }
 
                 ButtonActionType.RELOAD -> {
-                    runCatching { shopService.reload() }
-                        .onSuccess {
+                    platformExecutor.runGlobalAsync {
+                        shopService.reload()
+                    }.whenComplete { _, ex ->
+                        platformExecutor.runForPlayer(player) {
+                            if (ex != null) {
+                                val cause = ex.cause ?: ex
+                                shopService.messageService().send(
+                                    player,
+                                    "reload-failed",
+                                    mapOf("reason" to (cause.message ?: cause.javaClass.simpleName)),
+                                    player
+                                )
+                                return@runForPlayer
+                            }
                             if (!shop.settings.hideMessage) {
                                 shopService.messageService().send(player, "reload-success", player = player)
                             }
                             open(player, shop.id, OpenMode.REPLACE, page)
                         }
-                        .onFailure { ex ->
-                            shopService.messageService().send(
-                                player,
-                                "reload-failed",
-                                mapOf("reason" to (ex.message ?: ex.javaClass.simpleName)),
-                                player
-                            )
-                        }
+                    }
                     return
                 }
 
@@ -722,12 +727,12 @@ class ShopGuiService(
     }
 
     private fun openInventory(player: Player, inventory: Inventory) {
-        markTransition(player.uniqueId)
+        markTransition(player)
         player.openInventory(inventory)
     }
 
     private fun closeInventory(player: Player) {
-        markTransition(player.uniqueId)
+        markTransition(player)
         player.closeInventory()
     }
 
@@ -923,11 +928,15 @@ class ShopGuiService(
         return true
     }
 
-    private fun markTransition(playerId: UUID) {
+    private fun markTransition(player: Player) {
+        val playerId = player.uniqueId
         transitioningPlayers += playerId
-        plugin.server.scheduler.runTask(plugin, Runnable {
+        val scheduled = platformExecutor.runForPlayerLater(player, 1L) {
             transitioningPlayers.remove(playerId)
-        })
+        }
+        if (!scheduled) {
+            transitioningPlayers.remove(playerId)
+        }
     }
 
     private data class FavoriteDisplay(
