@@ -79,6 +79,7 @@ data class TradeLimitRules(
 )
 
 data class TradeReservation(
+    val reservationId: UUID,
     val shopId: String,
     val entryId: String,
     val playerId: UUID,
@@ -88,7 +89,8 @@ data class TradeReservation(
     val playerSellResetMarker: Long,
     val globalBuyResetMarker: Long,
     val globalSellResetMarker: Long,
-    val reservedAt: Instant
+    val reservedAt: Instant,
+    val expiresAt: Instant
 )
 
 data class PermissionLimit(

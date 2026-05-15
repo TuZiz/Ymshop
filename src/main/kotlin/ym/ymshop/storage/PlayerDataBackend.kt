@@ -53,6 +53,25 @@ interface ShopStatsRepository {
     fun rollbackShopTradeStats(reservation: TradeReservation): Boolean {
         return false
     }
+
+    fun commitShopTradeStats(reservation: TradeReservation): Boolean {
+        return false
+    }
+
+    fun recoverExpiredShopTradeReservations(nowMillis: Long): Int {
+        return 0
+    }
+
+    fun loadShopEntryStats(
+        shopId: String,
+        entryId: String,
+        playerId: UUID,
+        limits: TradeLimitRules,
+        nowMillis: Long,
+        zoneId: java.time.ZoneId
+    ): ym.ymshop.model.EntryStats? {
+        return null
+    }
 }
 
 interface PlayerDataBackend : FavoriteRepository, DailyTradeRepository, ShopStatsRepository {

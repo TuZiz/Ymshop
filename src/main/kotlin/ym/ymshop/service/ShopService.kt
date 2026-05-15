@@ -28,6 +28,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.ceil
 import kotlin.math.max
 
@@ -55,6 +57,8 @@ class ShopService(
     private val tradeLocks = TradeLockManager()
     private var zoneId: ZoneId = ZoneId.systemDefault()
     private var scheduledResetTask: PlatformExecutor.TaskHandle? = null
+    private var expiredReservationRecoveryTask: PlatformExecutor.TaskHandle? = null
+    private val sqlStatsCache = ConcurrentHashMap<SqlStatsCacheKey, CachedEntryStats>()
     private val resetListeners = mutableListOf<() -> Unit>()
 
     data class ShopPageRenderSnapshot(
@@ -80,6 +84,17 @@ class ShopService(
     private data class RenderPreparation(
         val statsByEntryId: Map<String, EntryStats>,
         val balanceTextsByCurrencyId: Map<String, String?>
+    )
+
+    private data class SqlStatsCacheKey(
+        val shopId: String,
+        val entryId: String,
+        val playerId: UUID
+    )
+
+    private data class CachedEntryStats(
+        val stats: EntryStats,
+        val expiresAtMillis: Long
     )
 
     private data class EntryRenderContext(
@@ -135,14 +150,18 @@ class ShopService(
         zoneId = loadedZoneId
         shops = loadedShops
         dataStores = loadedStores
+        sqlStatsCache.clear()
         val now = Instant.now()
+        recoverExpiredSqlReservations(logRecovered = true, async = false)
         refreshAllResets(now, logSummary = true)
         logResetTimezone(now)
         scheduleNextReset(now)
+        scheduleExpiredReservationRecovery()
     }
 
     fun close() {
         cancelScheduledResetTask()
+        cancelExpiredReservationRecoveryTask()
         dataStores.values.forEach(ShopDataStore::save)
         dailyTradeStore.save()
     }
@@ -266,12 +285,8 @@ class ShopService(
 
         return tradeLocks.withEntryLock(shop.id, entry.id) {
             val currency = currency(entry.currencyId)
-            val store = store(shop.id)
             val atomicStats = playerDataBackend.supportsAtomicShopStats
-            if (!atomicStats) {
-                refreshResets(shop, entry, player.uniqueId)
-            }
-            val stats = store.stats(entry.id, player.uniqueId)
+            val stats = statsForSingleServerOrDisplay(shop, entry, player)
             val safeMultiplier = multiplier.coerceAtLeast(1)
             val configuredItem = tradeItem(entry, side)
             val quantity = configuredItem.amount * safeMultiplier
@@ -298,9 +313,13 @@ class ShopService(
                 return@withEntryLock resourceCheck
             }
 
+            var reservedStats: EntryStats? = null
             val reservation = if (atomicStats) {
                 when (val reserved = reserveAtomicTradeStats(shop, entry, player, side, quantity)) {
-                    is AtomicShopStatsResult.Reserved -> reserved.reservation
+                    is AtomicShopStatsResult.Reserved -> {
+                        reservedStats = reserved.stats
+                        reserved.reservation
+                    }
                     is AtomicShopStatsResult.LimitExceeded -> {
                         return@withEntryLock TradeResult(
                             false,
@@ -329,19 +348,32 @@ class ShopService(
             }
             if (!result.success) {
                 reservation?.let { rollbackAtomicTradeStats(it, player, shop, entry, currency, totalPrice, quantity, side) }
+                invalidateSqlStatsCache(shop.id, entry.id, player.uniqueId)
                 return@withEntryLock result
             }
 
             if (atomicStats) {
-                store.record(
-                    entry.id,
-                    player.uniqueId,
-                    if (side == TradeSide.BUY) TradeMode.BUY else TradeMode.SELL,
-                    quantity,
-                    waitForPersistence = false
-                )
+                if (reservation != null && !playerDataBackend.commitShopTradeStats(reservation)) {
+                    logCompensation(
+                        player = player,
+                        shop = shop,
+                        entry = entry,
+                        side = side,
+                        amount = quantity,
+                        currency = currency,
+                        totalPrice = totalPrice,
+                        reason = "trade succeeded after SQL atomic stats reservation; reservation commit failed"
+                    )
+                    return@withEntryLock TradeResult(false, "trade-persistence-failed", replacements)
+                }
+                val latestStats = reservedStats
+                if (latestStats != null) {
+                    refreshSqlStatsCache(shop.id, entry.id, player.uniqueId, latestStats)
+                } else {
+                    invalidateSqlStatsCache(shop.id, entry.id, player.uniqueId)
+                }
             } else {
-                val statsPersisted = store.record(
+                val statsPersisted = store(shop.id).record(
                     entry.id,
                     player.uniqueId,
                     if (side == TradeSide.BUY) TradeMode.BUY else TradeMode.SELL,
@@ -398,7 +430,6 @@ class ShopService(
             return 0
         }
 
-        refreshResets(shop, entry, player.uniqueId)
         val unitItem = tradeItem(entry, TradeSide.SELL)
         val unitAmount = unitItem.amount.coerceAtLeast(1)
         val template = itemService.buildItem(unitItem, null)
@@ -408,7 +439,7 @@ class ShopService(
             return 0
         }
 
-        val stats = store(shop.id).stats(entry.id, player.uniqueId)
+        val stats = statsForSingleServerOrDisplay(shop, entry, player)
         val effectiveSellLimit = effectiveLimit(entry.limits.sell, entry.sellPermissionLimits, player)
         val remainingPlayer = remainingAllowed(entry.limits.player, stats.playerTotal, unitAmount)
         val remainingGlobal = remainingAllowed(entry.limits.global, stats.globalTotal, unitAmount)
@@ -682,17 +713,8 @@ class ShopService(
             return RenderPreparation(emptyMap(), emptyMap())
         }
 
-        val store = store(shop.id)
-        var changed = false
-        entries.forEach { entry ->
-            changed = refreshResets(store, entry, player.uniqueId, now, save = false) || changed
-        }
-        if (changed) {
-            store.saveAsync()
-        }
-
         val statsByEntryId = entries.associate { entry ->
-            entry.id.lowercase() to store.stats(entry.id, player.uniqueId)
+            entry.id.lowercase() to statsForSingleServerOrDisplay(shop, entry, player, now)
         }
         val balanceTextsByCurrencyId = entries.asSequence()
             .map { currency(it.currencyId) }
@@ -713,7 +735,8 @@ class ShopService(
         requestedSide: TradeSide?
     ): EntryRenderContext {
         val currency = currency(entry.currencyId)
-        val stats = preparation.statsByEntryId[entry.id.lowercase()] ?: store(shop.id).stats(entry.id, player.uniqueId)
+        val stats = preparation.statsByEntryId[entry.id.lowercase()]
+            ?: statsForSingleServerOrDisplay(shop, entry, player)
         val preferredSide = requestedSide ?: if (entry.supportsBuy) TradeSide.BUY else TradeSide.SELL
         val effectiveBuyLimit = effectiveLimit(entry.limits.buy, entry.buyPermissionLimits, player)
         val effectiveSellLimit = effectiveLimit(entry.limits.sell, entry.sellPermissionLimits, player)
@@ -763,6 +786,67 @@ class ShopService(
             balanceText = preparation.balanceTextsByCurrencyId[currency.id.lowercase()]
                 ?: currencyService.currentBalanceText(player, currency)
         )
+    }
+
+    private fun statsForSingleServerOrDisplay(
+        shop: ShopDefinition,
+        entry: ShopEntry,
+        player: Player,
+        now: Instant = Instant.now()
+    ): EntryStats {
+        return if (playerDataBackend.supportsAtomicShopStats) {
+            latestSqlStatsForDisplay(shop, entry, player.uniqueId, now)
+        } else {
+            refreshResets(shop, entry, player.uniqueId)
+            store(shop.id).stats(entry.id, player.uniqueId)
+        }
+    }
+
+    private fun latestSqlStatsForDisplay(
+        shop: ShopDefinition,
+        entry: ShopEntry,
+        playerId: UUID,
+        now: Instant
+    ): EntryStats {
+        val key = SqlStatsCacheKey(shop.id.lowercase(), entry.id.lowercase(), playerId)
+        val nowMillis = now.toEpochMilli()
+        val cached = sqlStatsCache[key]
+        if (cached != null && cached.expiresAtMillis > nowMillis) {
+            return cached.stats
+        }
+
+        val sqlStats = playerDataBackend.loadShopEntryStats(
+            shopId = shop.id,
+            entryId = entry.id,
+            playerId = playerId,
+            limits = TradeLimitRules(
+                playerLimit = entry.limits.player,
+                globalLimit = entry.limits.global,
+                buyLimit = null,
+                sellLimit = null,
+                buyGlobalLimit = entry.limits.buyGlobal,
+                sellGlobalLimit = entry.limits.sellGlobal,
+                buyResetPolicy = entry.buyResetPolicy,
+                sellResetPolicy = entry.sellResetPolicy
+            ),
+            nowMillis = nowMillis,
+            zoneId = zoneId
+        )
+        if (sqlStats != null) {
+            sqlStatsCache[key] = CachedEntryStats(sqlStats, nowMillis + SQL_STATS_CACHE_TTL_MILLIS)
+            return sqlStats
+        }
+        return store(shop.id).stats(entry.id, playerId)
+    }
+
+    private fun invalidateSqlStatsCache(shopId: String, entryId: String, playerId: UUID) {
+        sqlStatsCache.remove(SqlStatsCacheKey(shopId.lowercase(), entryId.lowercase(), playerId))
+    }
+
+    private fun refreshSqlStatsCache(shopId: String, entryId: String, playerId: UUID, stats: EntryStats) {
+        val nowMillis = Instant.now().toEpochMilli()
+        sqlStatsCache[SqlStatsCacheKey(shopId.lowercase(), entryId.lowercase(), playerId)] =
+            CachedEntryStats(stats, nowMillis + SQL_STATS_CACHE_TTL_MILLIS)
     }
 
     private fun baseReplacements(context: EntryRenderContext): Map<String, String> {
@@ -1060,6 +1144,49 @@ class ShopService(
         scheduledResetTask = null
     }
 
+    private fun scheduleExpiredReservationRecovery() {
+        cancelExpiredReservationRecoveryTask()
+        if (!playerDataBackend.supportsAtomicShopStats) {
+            return
+        }
+        expiredReservationRecoveryTask = platformExecutor.runGlobalTimer(
+            delayTicks = EXPIRED_RESERVATION_RECOVERY_DELAY_TICKS,
+            periodTicks = EXPIRED_RESERVATION_RECOVERY_PERIOD_TICKS
+        ) {
+            recoverExpiredSqlReservations(logRecovered = true)
+        }
+    }
+
+    private fun cancelExpiredReservationRecoveryTask() {
+        expiredReservationRecoveryTask?.cancel()
+        expiredReservationRecoveryTask = null
+    }
+
+    private fun recoverExpiredSqlReservations(logRecovered: Boolean, async: Boolean = true) {
+        if (!playerDataBackend.supportsAtomicShopStats) {
+            return
+        }
+        val recovery = {
+            val recovered = playerDataBackend.recoverExpiredShopTradeReservations(Instant.now().toEpochMilli())
+            if (recovered > 0) {
+                sqlStatsCache.clear()
+                if (logRecovered) {
+                    plugin.logger.warning("Recovered $recovered expired SQL trade reservation(s); rolled back reserved stats.")
+                }
+            }
+        }
+        if (!async) {
+            recovery()
+            return
+        }
+        platformExecutor.runGlobalAsync {
+            recovery()
+        }.exceptionally { ex ->
+            plugin.logger.severe("Failed to schedule expired SQL trade reservation recovery: ${ex.message}")
+            null
+        }
+    }
+
     private fun notifyResetListeners() {
         resetListeners.forEach { listener ->
             runCatching(listener).onFailure { ex ->
@@ -1257,8 +1384,7 @@ class ShopService(
                     return@forEach
                 }
 
-                refreshResets(shop, entry, player.uniqueId)
-                val stats = store(shop.id).stats(entry.id, player.uniqueId)
+                val stats = statsForSingleServerOrDisplay(shop, entry, player)
                 val remainingTrades = remainingSellTrades(entry, stats, player) ?: return null
                 total += remainingTrades * requireNotNull(entry.sellPrice)
             }
@@ -1475,6 +1601,9 @@ class ShopService(
 
     private companion object {
         val GLOBAL_SCOPE_PLAYER_ID: java.util.UUID = java.util.UUID(0L, 0L)
+        const val SQL_STATS_CACHE_TTL_MILLIS = 2_000L
+        const val EXPIRED_RESERVATION_RECOVERY_DELAY_TICKS = 20L
+        const val EXPIRED_RESERVATION_RECOVERY_PERIOD_TICKS = 1_200L
     }
 
     private fun logTrade(

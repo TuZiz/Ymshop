@@ -64,6 +64,26 @@ private object MysqlDialect : SqlDialect {
             sell_reset_marker BIGINT NOT NULL,
             PRIMARY KEY (shop_id, entry_id)
         )
+        """.trimIndent(),
+        """
+        CREATE TABLE IF NOT EXISTS ymshop_trade_reservations (
+            reservation_id VARCHAR(36) NOT NULL,
+            shop_id VARCHAR(128) NOT NULL,
+            entry_id VARCHAR(128) NOT NULL,
+            player_id VARCHAR(36) NOT NULL,
+            side VARCHAR(16) NOT NULL,
+            amount INT NOT NULL,
+            status VARCHAR(16) NOT NULL,
+            player_buy_reset_marker BIGINT NOT NULL,
+            player_sell_reset_marker BIGINT NOT NULL,
+            global_buy_reset_marker BIGINT NOT NULL,
+            global_sell_reset_marker BIGINT NOT NULL,
+            created_at BIGINT NOT NULL,
+            expires_at BIGINT NOT NULL,
+            PRIMARY KEY (reservation_id),
+            INDEX idx_ymshop_trade_reservations_expired (status, expires_at),
+            INDEX idx_ymshop_trade_reservations_entry (shop_id, entry_id, player_id)
+        )
         """.trimIndent()
     )
 
@@ -164,6 +184,32 @@ private object PostgresqlDialect : SqlDialect {
             sell_reset_marker BIGINT NOT NULL,
             PRIMARY KEY (shop_id, entry_id)
         )
+        """.trimIndent(),
+        """
+        CREATE TABLE IF NOT EXISTS ymshop_trade_reservations (
+            reservation_id VARCHAR(36) NOT NULL,
+            shop_id VARCHAR(128) NOT NULL,
+            entry_id VARCHAR(128) NOT NULL,
+            player_id VARCHAR(36) NOT NULL,
+            side VARCHAR(16) NOT NULL,
+            amount INTEGER NOT NULL,
+            status VARCHAR(16) NOT NULL,
+            player_buy_reset_marker BIGINT NOT NULL,
+            player_sell_reset_marker BIGINT NOT NULL,
+            global_buy_reset_marker BIGINT NOT NULL,
+            global_sell_reset_marker BIGINT NOT NULL,
+            created_at BIGINT NOT NULL,
+            expires_at BIGINT NOT NULL,
+            PRIMARY KEY (reservation_id)
+        )
+        """.trimIndent(),
+        """
+        CREATE INDEX IF NOT EXISTS idx_ymshop_trade_reservations_expired
+        ON ymshop_trade_reservations (status, expires_at)
+        """.trimIndent(),
+        """
+        CREATE INDEX IF NOT EXISTS idx_ymshop_trade_reservations_entry
+        ON ymshop_trade_reservations (shop_id, entry_id, player_id)
         """.trimIndent()
     )
 

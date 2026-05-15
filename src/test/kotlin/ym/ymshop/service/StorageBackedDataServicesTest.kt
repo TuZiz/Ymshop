@@ -101,6 +101,38 @@ class StorageBackedDataServicesTest {
                 zoneId = java.time.ZoneId.of("UTC")
             )
         )
+        assertFalse(backend.commitShopTradeStats(sampleReservation()))
+        assertFalse(backend.rollbackShopTradeStats(sampleReservation()))
+        assertEquals(0, backend.recoverExpiredShopTradeReservations(1_000L))
+        assertEquals(
+            null,
+            backend.loadShopEntryStats(
+                shopId = "main",
+                entryId = "diamond",
+                playerId = UUID.randomUUID(),
+                limits = ym.ymshop.model.TradeLimitRules(),
+                nowMillis = 0L,
+                zoneId = java.time.ZoneId.of("UTC")
+            )
+        )
+    }
+
+    private fun sampleReservation(): ym.ymshop.model.TradeReservation {
+        val now = java.time.Instant.EPOCH
+        return ym.ymshop.model.TradeReservation(
+            reservationId = UUID.randomUUID(),
+            shopId = "main",
+            entryId = "diamond",
+            playerId = UUID.randomUUID(),
+            side = TradeSide.BUY,
+            amount = 1,
+            playerBuyResetMarker = 0L,
+            playerSellResetMarker = 0L,
+            globalBuyResetMarker = 0L,
+            globalSellResetMarker = 0L,
+            reservedAt = now,
+            expiresAt = now.plusSeconds(300)
+        )
     }
 
     private class FakePlayerDataBackend : PlayerDataBackend {
