@@ -2,7 +2,10 @@ package ym.ymshop.storage
 
 import ym.ymshop.model.TradeLimitRules
 import ym.ymshop.model.TradeReservation
+import ym.ymshop.model.TradeReservationRecord
+import ym.ymshop.model.TradeReservationStatus
 import ym.ymshop.model.TradeSide
+import ym.ymshop.model.ShopTradeReservationRecoveryResult
 import java.util.UUID
 
 interface FavoriteRepository {
@@ -54,7 +57,11 @@ interface ShopStatsRepository {
         return false
     }
 
-    fun prepareShopTradeStatsCommit(reservation: TradeReservation): Boolean {
+    fun beginShopTradeStatsExecution(reservation: TradeReservation): Boolean {
+        return false
+    }
+
+    fun markShopTradeStatsCommitRetry(reservation: TradeReservation): Boolean {
         return false
     }
 
@@ -63,7 +70,15 @@ interface ShopStatsRepository {
     }
 
     fun recoverExpiredShopTradeReservations(nowMillis: Long): Int {
-        return 0
+        return recoverExpiredShopTradeReservationsDetailed(nowMillis).rolledBack
+    }
+
+    fun recoverExpiredShopTradeReservationsDetailed(nowMillis: Long): ShopTradeReservationRecoveryResult {
+        return ShopTradeReservationRecoveryResult()
+    }
+
+    fun loadShopTradeReservationsByStatus(statuses: Set<TradeReservationStatus>): List<TradeReservationRecord> {
+        return emptyList()
     }
 
     fun loadShopEntryStats(

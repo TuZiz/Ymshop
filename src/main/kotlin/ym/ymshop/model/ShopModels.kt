@@ -93,6 +93,29 @@ data class TradeReservation(
     val expiresAt: Instant
 )
 
+enum class TradeReservationStatus {
+    PENDING,
+    EXECUTING,
+    IN_DOUBT,
+    COMMIT_RETRY,
+    COMMITTED,
+    ROLLED_BACK,
+    ADMIN_REVIEW
+}
+
+data class TradeReservationRecord(
+    val reservation: TradeReservation,
+    val status: TradeReservationStatus
+)
+
+data class ShopTradeReservationRecoveryResult(
+    val rolledBack: Int = 0,
+    val adminReview: List<TradeReservation> = emptyList()
+) {
+    val totalChanged: Int
+        get() = rolledBack + adminReview.size
+}
+
 data class PermissionLimit(
     val permission: String,
     val amount: Long

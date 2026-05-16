@@ -4,8 +4,11 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.bukkit.plugin.java.JavaPlugin
 import ym.ymshop.model.EntryStats
+import ym.ymshop.model.ShopTradeReservationRecoveryResult
 import ym.ymshop.model.TradeLimitRules
 import ym.ymshop.model.TradeReservation
+import ym.ymshop.model.TradeReservationRecord
+import ym.ymshop.model.TradeReservationStatus
 import ym.ymshop.model.TradeSide
 import ym.ymshop.service.ResetScopeAction
 import ym.ymshop.service.ShopResetSupport
@@ -202,16 +205,33 @@ class SqlPlayerDataBackend(
             .getOrDefault(false)
     }
 
-    override fun prepareShopTradeStatsCommit(reservation: TradeReservation): Boolean {
+    override fun beginShopTradeStatsExecution(reservation: TradeReservation): Boolean {
         val future = executor.submit<Boolean> {
             dataSource.connection.use { connection ->
-                prepareShopTradeStatsCommitInTransaction(connection, reservation)
+                beginShopTradeStatsExecutionInTransaction(connection, reservation)
             }
         }
         return runCatching { future.get(30, TimeUnit.SECONDS) }
             .onFailure { ex ->
                 plugin.logger.severe(
-                    "Ymshop SQL trade reservation commit preparation failed [reservation:${reservation.reservationId} " +
+                    "Ymshop SQL trade reservation execution mark failed [reservation:${reservation.reservationId} " +
+                        "shop:${reservation.shopId} entry:${reservation.entryId}]: ${ex.message}"
+                )
+                ex.printStackTrace()
+            }
+            .getOrDefault(false)
+    }
+
+    override fun markShopTradeStatsCommitRetry(reservation: TradeReservation): Boolean {
+        val future = executor.submit<Boolean> {
+            dataSource.connection.use { connection ->
+                markShopTradeStatsCommitRetryInTransaction(connection, reservation)
+            }
+        }
+        return runCatching { future.get(30, TimeUnit.SECONDS) }
+            .onFailure { ex ->
+                plugin.logger.severe(
+                    "Ymshop SQL trade reservation COMMIT_RETRY mark failed [reservation:${reservation.reservationId} " +
                         "shop:${reservation.shopId} entry:${reservation.entryId}]: ${ex.message}"
                 )
                 ex.printStackTrace()
@@ -237,7 +257,11 @@ class SqlPlayerDataBackend(
     }
 
     override fun recoverExpiredShopTradeReservations(nowMillis: Long): Int {
-        val future = executor.submit<Int> {
+        return recoverExpiredShopTradeReservationsDetailed(nowMillis).rolledBack
+    }
+
+    override fun recoverExpiredShopTradeReservationsDetailed(nowMillis: Long): ShopTradeReservationRecoveryResult {
+        val future = executor.submit<ShopTradeReservationRecoveryResult> {
             dataSource.connection.use { connection ->
                 recoverExpiredShopTradeReservationsInTransaction(connection, nowMillis)
             }
@@ -247,7 +271,25 @@ class SqlPlayerDataBackend(
                 plugin.logger.severe("Ymshop SQL expired trade reservation recovery failed: ${ex.message}")
                 ex.printStackTrace()
             }
-            .getOrDefault(0)
+            .getOrDefault(ShopTradeReservationRecoveryResult())
+    }
+
+    override fun loadShopTradeReservationsByStatus(statuses: Set<TradeReservationStatus>): List<TradeReservationRecord> {
+        if (statuses.isEmpty()) {
+            return emptyList()
+        }
+        val future = executor.submit<List<TradeReservationRecord>> {
+            dataSource.connection.use { connection ->
+                selectReservationsByStatus(connection, statuses)
+                    .map { TradeReservationRecord(it.toReservation(), it.status) }
+            }
+        }
+        return runCatching { future.get(30, TimeUnit.SECONDS) }
+            .onFailure { ex ->
+                plugin.logger.severe("Ymshop SQL trade reservation status query failed: ${ex.message}")
+                ex.printStackTrace()
+            }
+            .getOrDefault(emptyList())
     }
 
     override fun loadShopEntryStats(
@@ -461,7 +503,7 @@ class SqlPlayerDataBackend(
                 connection.commit()
                 return true
             }
-            if (row.status == RESERVATION_COMMITTED) {
+            if (!TradeReservationStatusPolicy.canRollback(row.status)) {
                 connection.rollback()
                 return false
             }
@@ -477,7 +519,7 @@ class SqlPlayerDataBackend(
         }
     }
 
-    private fun prepareShopTradeStatsCommitInTransaction(
+    private fun beginShopTradeStatsExecutionInTransaction(
         connection: Connection,
         reservation: TradeReservation
     ): Boolean {
@@ -489,17 +531,47 @@ class SqlPlayerDataBackend(
                 connection.rollback()
                 return false
             }
-            if (row.status == RESERVATION_ROLLED_BACK) {
+            if (!TradeReservationStatusPolicy.canBeginExecution(row.status)) {
                 connection.rollback()
                 return false
             }
             when (row.status) {
-                RESERVATION_PENDING -> updateReservationStatus(connection, row.reservationId, RESERVATION_COMMIT_RETRY)
-                RESERVATION_COMMIT_RETRY, RESERVATION_COMMITTED -> Unit
-                else -> {
-                    connection.rollback()
-                    return false
-                }
+                RESERVATION_PENDING -> updateReservationStatus(connection, row.reservationId, RESERVATION_EXECUTING)
+                RESERVATION_EXECUTING, RESERVATION_IN_DOUBT -> Unit
+                else -> Unit
+            }
+            connection.commit()
+            return true
+        } catch (ex: Exception) {
+            connection.rollback()
+            throw ex
+        } finally {
+            connection.autoCommit = true
+        }
+    }
+
+    private fun markShopTradeStatsCommitRetryInTransaction(
+        connection: Connection,
+        reservation: TradeReservation
+    ): Boolean {
+        connection.autoCommit = false
+        try {
+            lockEntryForTransaction(connection, reservation.shopId, reservation.entryId)
+            val row = selectReservationForUpdate(connection, reservation.reservationId)
+            if (row == null) {
+                connection.rollback()
+                return false
+            }
+            if (!TradeReservationStatusPolicy.canMarkCommitRetry(row.status)) {
+                connection.rollback()
+                return false
+            }
+            when (row.status) {
+                RESERVATION_EXECUTING,
+                RESERVATION_IN_DOUBT -> updateReservationStatus(connection, row.reservationId, RESERVATION_COMMIT_RETRY)
+                RESERVATION_COMMIT_RETRY,
+                RESERVATION_COMMITTED -> Unit
+                else -> Unit
             }
             connection.commit()
             return true
@@ -527,7 +599,11 @@ class SqlPlayerDataBackend(
                 connection.rollback()
                 return false
             }
-            if (row.status == RESERVATION_PENDING || row.status == RESERVATION_COMMIT_RETRY) {
+            if (!TradeReservationStatusPolicy.canAutoCommit(row.status) && row.status != RESERVATION_COMMITTED) {
+                connection.rollback()
+                return false
+            }
+            if (row.status == RESERVATION_COMMIT_RETRY) {
                 updateReservationStatus(connection, row.reservationId, RESERVATION_COMMITTED)
             }
             connection.commit()
@@ -540,26 +616,39 @@ class SqlPlayerDataBackend(
         }
     }
 
-    private fun recoverExpiredShopTradeReservationsInTransaction(connection: Connection, nowMillis: Long): Int {
+    private fun recoverExpiredShopTradeReservationsInTransaction(
+        connection: Connection,
+        nowMillis: Long
+    ): ShopTradeReservationRecoveryResult {
         val expired = selectExpiredReservations(connection, nowMillis)
         if (expired.isEmpty()) {
-            return 0
+            return ShopTradeReservationRecoveryResult()
         }
 
-        var recovered = 0
+        var rolledBack = 0
+        val adminReview = mutableListOf<TradeReservation>()
         expired.forEach { candidate ->
             connection.autoCommit = false
             try {
                 lockEntryForTransaction(connection, candidate.shopId, candidate.entryId)
                 val row = selectReservationForUpdate(connection, candidate.reservationId)
-                if (row == null || row.status != RESERVATION_PENDING || row.expiresAtMillis > nowMillis) {
+                if (row == null || row.expiresAtMillis > nowMillis) {
                     connection.commit()
                     return@forEach
                 }
-                rollbackPendingReservation(connection, row)
-                updateReservationStatus(connection, row.reservationId, RESERVATION_ROLLED_BACK)
+                when (TradeReservationStatusPolicy.expiredAction(row.status)) {
+                    ExpiredReservationAction.ROLLBACK -> {
+                        rollbackPendingReservation(connection, row)
+                        updateReservationStatus(connection, row.reservationId, RESERVATION_ROLLED_BACK)
+                        rolledBack++
+                    }
+                    ExpiredReservationAction.ADMIN_REVIEW -> {
+                        updateReservationStatus(connection, row.reservationId, RESERVATION_ADMIN_REVIEW)
+                        adminReview += row.toReservation()
+                    }
+                    ExpiredReservationAction.IGNORE -> Unit
+                }
                 connection.commit()
-                recovered++
             } catch (ex: Exception) {
                 connection.rollback()
                 throw ex
@@ -567,7 +656,7 @@ class SqlPlayerDataBackend(
                 connection.autoCommit = true
             }
         }
-        return recovered
+        return ShopTradeReservationRecoveryResult(rolledBack = rolledBack, adminReview = adminReview)
     }
 
     private fun rollbackPendingReservation(connection: Connection, row: ReservationRow) {
@@ -656,7 +745,7 @@ class SqlPlayerDataBackend(
             statement.setString(4, playerId.toString())
             statement.setString(5, side.name)
             statement.setInt(6, amount)
-            statement.setString(7, RESERVATION_PENDING)
+            statement.setString(7, RESERVATION_PENDING.name)
             statement.setLong(8, playerBuyResetMarker)
             statement.setLong(9, playerSellResetMarker)
             statement.setLong(10, globalBuyResetMarker)
@@ -694,14 +783,16 @@ class SqlPlayerDataBackend(
                    global_buy_reset_marker, global_sell_reset_marker,
                    created_at, expires_at
             FROM ymshop_trade_reservations
-            WHERE status = ? AND expires_at <= ?
+            WHERE status IN (?, ?, ?) AND expires_at <= ?
             ORDER BY expires_at ASC
             LIMIT ?
             """.trimIndent()
         ).use { statement ->
-            statement.setString(1, RESERVATION_PENDING)
-            statement.setLong(2, nowMillis)
-            statement.setInt(3, RECOVERY_BATCH_SIZE)
+            statement.setString(1, RESERVATION_PENDING.name)
+            statement.setString(2, RESERVATION_EXECUTING.name)
+            statement.setString(3, RESERVATION_IN_DOUBT.name)
+            statement.setLong(4, nowMillis)
+            statement.setInt(5, RECOVERY_BATCH_SIZE)
             statement.executeQuery().use { result ->
                 val rows = mutableListOf<ReservationRow>()
                 while (result.next()) {
@@ -712,7 +803,36 @@ class SqlPlayerDataBackend(
         }
     }
 
-    private fun updateReservationStatus(connection: Connection, reservationId: UUID, status: String) {
+    private fun selectReservationsByStatus(
+        connection: Connection,
+        statuses: Set<TradeReservationStatus>
+    ): List<ReservationRow> {
+        val placeholders = statuses.joinToString(", ") { "?" }
+        connection.prepareStatement(
+            """
+            SELECT reservation_id, shop_id, entry_id, player_id, side, amount, status,
+                   player_buy_reset_marker, player_sell_reset_marker,
+                   global_buy_reset_marker, global_sell_reset_marker,
+                   created_at, expires_at
+            FROM ymshop_trade_reservations
+            WHERE status IN ($placeholders)
+            ORDER BY created_at ASC
+            LIMIT ?
+            """.trimIndent()
+        ).use { statement ->
+            statuses.forEachIndexed { index, status -> statement.setString(index + 1, status.name) }
+            statement.setInt(statuses.size + 1, STATUS_SCAN_BATCH_SIZE)
+            statement.executeQuery().use { result ->
+                val rows = mutableListOf<ReservationRow>()
+                while (result.next()) {
+                    rows += reservationRow(result)
+                }
+                return rows
+            }
+        }
+    }
+
+    private fun updateReservationStatus(connection: Connection, reservationId: UUID, status: TradeReservationStatus) {
         connection.prepareStatement(
             """
             UPDATE ymshop_trade_reservations
@@ -720,7 +840,7 @@ class SqlPlayerDataBackend(
             WHERE reservation_id = ?
             """.trimIndent()
         ).use { statement ->
-            statement.setString(1, status)
+            statement.setString(1, status.name)
             statement.setString(2, reservationId.toString())
             check(statement.executeUpdate() == 1) { "Failed to update trade reservation status" }
         }
@@ -892,13 +1012,30 @@ class SqlPlayerDataBackend(
             playerId = UUID.fromString(result.getString("player_id")),
             side = TradeSide.valueOf(result.getString("side")),
             amount = result.getInt("amount"),
-            status = result.getString("status"),
+            status = TradeReservationStatus.valueOf(result.getString("status")),
             playerBuyResetMarker = result.getLong("player_buy_reset_marker"),
             playerSellResetMarker = result.getLong("player_sell_reset_marker"),
             globalBuyResetMarker = result.getLong("global_buy_reset_marker"),
             globalSellResetMarker = result.getLong("global_sell_reset_marker"),
             createdAtMillis = result.getLong("created_at"),
             expiresAtMillis = result.getLong("expires_at")
+        )
+    }
+
+    private fun ReservationRow.toReservation(): TradeReservation {
+        return TradeReservation(
+            reservationId = reservationId,
+            shopId = shopId,
+            entryId = entryId,
+            playerId = playerId,
+            side = side,
+            amount = amount,
+            playerBuyResetMarker = playerBuyResetMarker,
+            playerSellResetMarker = playerSellResetMarker,
+            globalBuyResetMarker = globalBuyResetMarker,
+            globalSellResetMarker = globalSellResetMarker,
+            reservedAt = Instant.ofEpochMilli(createdAtMillis),
+            expiresAt = Instant.ofEpochMilli(expiresAtMillis)
         )
     }
 
@@ -955,7 +1092,7 @@ class SqlPlayerDataBackend(
         val playerId: UUID,
         val side: TradeSide,
         val amount: Int,
-        val status: String,
+        val status: TradeReservationStatus,
         val playerBuyResetMarker: Long,
         val playerSellResetMarker: Long,
         val globalBuyResetMarker: Long,
@@ -965,11 +1102,15 @@ class SqlPlayerDataBackend(
     )
 
     private companion object {
-        const val RESERVATION_PENDING = "PENDING"
-        const val RESERVATION_COMMITTED = "COMMITTED"
-        const val RESERVATION_COMMIT_RETRY = "COMMIT_RETRY"
-        const val RESERVATION_ROLLED_BACK = "ROLLED_BACK"
+        val RESERVATION_PENDING = TradeReservationStatus.PENDING
+        val RESERVATION_EXECUTING = TradeReservationStatus.EXECUTING
+        val RESERVATION_IN_DOUBT = TradeReservationStatus.IN_DOUBT
+        val RESERVATION_COMMIT_RETRY = TradeReservationStatus.COMMIT_RETRY
+        val RESERVATION_COMMITTED = TradeReservationStatus.COMMITTED
+        val RESERVATION_ROLLED_BACK = TradeReservationStatus.ROLLED_BACK
+        val RESERVATION_ADMIN_REVIEW = TradeReservationStatus.ADMIN_REVIEW
         const val RESERVATION_TTL_MILLIS = 300_000L
         const val RECOVERY_BATCH_SIZE = 100
+        const val STATUS_SCAN_BATCH_SIZE = 1_000
     }
 }

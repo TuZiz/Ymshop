@@ -102,9 +102,12 @@ class StorageBackedDataServicesTest {
             )
         )
         assertFalse(backend.commitShopTradeStats(sampleReservation()))
-        assertFalse(backend.prepareShopTradeStatsCommit(sampleReservation()))
+        assertFalse(backend.beginShopTradeStatsExecution(sampleReservation()))
+        assertFalse(backend.markShopTradeStatsCommitRetry(sampleReservation()))
         assertFalse(backend.rollbackShopTradeStats(sampleReservation()))
         assertEquals(0, backend.recoverExpiredShopTradeReservations(1_000L))
+        assertEquals(0, backend.recoverExpiredShopTradeReservationsDetailed(1_000L).totalChanged)
+        assertEquals(emptyList(), backend.loadShopTradeReservationsByStatus(setOf(ym.ymshop.model.TradeReservationStatus.COMMIT_RETRY)))
         assertEquals(
             null,
             backend.loadShopEntryStats(
