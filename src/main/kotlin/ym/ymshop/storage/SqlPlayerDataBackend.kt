@@ -244,6 +244,23 @@ class SqlPlayerDataBackend(
             .getOrDefault(false)
     }
 
+    override fun prepareShopTradeStatsCommit(reservation: TradeReservation): Boolean {
+        val future = executor.submit<Boolean> {
+            dataSource.connection.use { connection ->
+                prepareShopTradeStatsCommitInTransaction(connection, reservation)
+            }
+        }
+        return runCatching { future.get(30, TimeUnit.SECONDS) }
+            .onFailure { ex ->
+                plugin.logger.severe(
+                    "Ymshop SQL trade reservation commit preparation failed [reservation:${reservation.reservationId} " +
+                        "shop:${reservation.shopId} entry:${reservation.entryId}]: ${ex.message}"
+                )
+                ex.printStackTrace()
+            }
+            .getOrDefault(false)
+    }
+
     override fun commitShopTradeStats(reservation: TradeReservation): Boolean {
         val future = executor.submit<Boolean> {
             dataSource.connection.use { connection ->
@@ -502,6 +519,40 @@ class SqlPlayerDataBackend(
         }
     }
 
+    private fun prepareShopTradeStatsCommitInTransaction(
+        connection: Connection,
+        reservation: TradeReservation
+    ): Boolean {
+        connection.autoCommit = false
+        try {
+            lockEntryForTransaction(connection, reservation.shopId, reservation.entryId)
+            val row = selectReservationForUpdate(connection, reservation.reservationId)
+            if (row == null) {
+                connection.rollback()
+                return false
+            }
+            if (row.status == RESERVATION_ROLLED_BACK) {
+                connection.rollback()
+                return false
+            }
+            when (row.status) {
+                RESERVATION_PENDING -> updateReservationStatus(connection, row.reservationId, RESERVATION_COMMIT_RETRY)
+                RESERVATION_COMMIT_RETRY, RESERVATION_COMMITTED -> Unit
+                else -> {
+                    connection.rollback()
+                    return false
+                }
+            }
+            connection.commit()
+            return true
+        } catch (ex: Exception) {
+            connection.rollback()
+            throw ex
+        } finally {
+            connection.autoCommit = true
+        }
+    }
+
     private fun commitShopTradeStatsInTransaction(
         connection: Connection,
         reservation: TradeReservation
@@ -518,7 +569,7 @@ class SqlPlayerDataBackend(
                 connection.rollback()
                 return false
             }
-            if (row.status == RESERVATION_PENDING) {
+            if (row.status == RESERVATION_PENDING || row.status == RESERVATION_COMMIT_RETRY) {
                 updateReservationStatus(connection, row.reservationId, RESERVATION_COMMITTED)
             }
             connection.commit()
@@ -787,10 +838,16 @@ class SqlPlayerDataBackend(
             val playerRow = selectPlayerStatsForUpdate(connection, shopId, entryId, playerId)
             val globalRow = selectGlobalStatsForUpdate(connection, shopId, entryId)
             val now = Instant.ofEpochMilli(nowMillis)
+            val playerBeforeReset = playerRow.copy()
+            val globalBeforeReset = globalRow.copy()
             applyResetPolicies(playerRow, limits, now, zoneId)
             applyResetPolicies(globalRow, limits, now, zoneId)
-            updatePlayerStats(connection, shopId, entryId, playerId, playerRow)
-            updateGlobalStats(connection, shopId, entryId, globalRow)
+            if (playerRow != playerBeforeReset) {
+                updatePlayerStats(connection, shopId, entryId, playerId, playerRow)
+            }
+            if (globalRow != globalBeforeReset) {
+                updateGlobalStats(connection, shopId, entryId, globalRow)
+            }
             connection.commit()
             return entryStats(playerRow, globalRow)
         } catch (ex: Exception) {
@@ -952,6 +1009,7 @@ class SqlPlayerDataBackend(
     private companion object {
         const val RESERVATION_PENDING = "PENDING"
         const val RESERVATION_COMMITTED = "COMMITTED"
+        const val RESERVATION_COMMIT_RETRY = "COMMIT_RETRY"
         const val RESERVATION_ROLLED_BACK = "ROLLED_BACK"
         const val RESERVATION_TTL_MILLIS = 300_000L
         const val RECOVERY_BATCH_SIZE = 100

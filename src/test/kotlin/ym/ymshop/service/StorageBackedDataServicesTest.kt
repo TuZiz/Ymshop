@@ -102,6 +102,7 @@ class StorageBackedDataServicesTest {
             )
         )
         assertFalse(backend.commitShopTradeStats(sampleReservation()))
+        assertFalse(backend.prepareShopTradeStatsCommit(sampleReservation()))
         assertFalse(backend.rollbackShopTradeStats(sampleReservation()))
         assertEquals(0, backend.recoverExpiredShopTradeReservations(1_000L))
         assertEquals(

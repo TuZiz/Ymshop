@@ -30,6 +30,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.ceil
 import kotlin.math.max
 
@@ -55,10 +56,14 @@ class ShopService(
 
     private val dailyTradeStore = PlayerDailyTradeStore(playerDataBackend)
     private val tradeLocks = TradeLockManager()
+    private val sqlCommitRetryStore = SqlCommitRetryStore(plugin)
     private var zoneId: ZoneId = ZoneId.systemDefault()
     private var scheduledResetTask: PlatformExecutor.TaskHandle? = null
     private var expiredReservationRecoveryTask: PlatformExecutor.TaskHandle? = null
     private val sqlStatsCache = ConcurrentHashMap<SqlStatsCacheKey, CachedEntryStats>()
+    private val pausedSqlEntries = ConcurrentHashMap.newKeySet<ShopEntryKey>()
+    private val sqlReservationMaintenanceRunning = AtomicBoolean(false)
+    private val sqlReservationWarmingUp = AtomicBoolean(false)
     private val resetListeners = mutableListOf<() -> Unit>()
 
     data class ShopPageRenderSnapshot(
@@ -90,6 +95,11 @@ class ShopService(
         val shopId: String,
         val entryId: String,
         val playerId: UUID
+    )
+
+    private data class ShopEntryKey(
+        val shopId: String,
+        val entryId: String
     )
 
     private data class CachedEntryStats(
@@ -151,8 +161,9 @@ class ShopService(
         shops = loadedShops
         dataStores = loadedStores
         sqlStatsCache.clear()
+        loadSqlCommitRetryPauses(logLoaded = true)
         val now = Instant.now()
-        recoverExpiredSqlReservations(logRecovered = true, async = false)
+        runSqlReservationMaintenance(logRecovered = true, startup = true)
         refreshAllResets(now, logSummary = true)
         logResetTimezone(now)
         scheduleNextReset(now)
@@ -286,6 +297,7 @@ class ShopService(
         return tradeLocks.withEntryLock(shop.id, entry.id) {
             val currency = currency(entry.currencyId)
             val atomicStats = playerDataBackend.supportsAtomicShopStats
+            sqlAtomicTradeGuard(shop, entry)?.let { return@withEntryLock it }
             val stats = statsForSingleServerOrDisplay(shop, entry, player)
             val safeMultiplier = multiplier.coerceAtLeast(1)
             val configuredItem = tradeItem(entry, side)
@@ -342,18 +354,27 @@ class ShopService(
                 null
             }
 
+            if (reservation != null && !prepareAtomicTradeCommit(reservation, player, shop, entry, currency, totalPrice, quantity, side)) {
+                invalidateSqlStatsCache(shop.id, entry.id, player.uniqueId)
+                return@withEntryLock TradeResult(false, "trade-persistence-failed", replacements)
+            }
+
             val result = when (side) {
                 TradeSide.BUY -> executeBuy(player, shop, entry, currency, totalPrice, quantity, replacements)
                 TradeSide.SELL -> executeSell(player, shop, entry, currency, totalPrice, quantity, replacements)
             }
             if (!result.success) {
-                reservation?.let { rollbackAtomicTradeStats(it, player, shop, entry, currency, totalPrice, quantity, side) }
+                val rolledBack = reservation?.let {
+                    rollbackAtomicTradeStats(it, player, shop, entry, currency, totalPrice, quantity, side)
+                } ?: true
+                reservation?.let { clearAtomicCommitRetry(it, keepPaused = !rolledBack) }
                 invalidateSqlStatsCache(shop.id, entry.id, player.uniqueId)
                 return@withEntryLock result
             }
 
             if (atomicStats) {
                 if (reservation != null && !playerDataBackend.commitShopTradeStats(reservation)) {
+                    keepSqlEntryPaused(shop.id, entry.id)
                     logCompensation(
                         player = player,
                         shop = shop,
@@ -362,10 +383,17 @@ class ShopService(
                         amount = quantity,
                         currency = currency,
                         totalPrice = totalPrice,
-                        reason = "trade succeeded after SQL atomic stats reservation; reservation commit failed"
+                        reason = "HIGH RISK: trade succeeded after SQL atomic stats reservation; COMMIT_RETRY reservation commit failed and will be retried"
                     )
+                    plugin.logger.severe(
+                        "HIGH RISK: Ymshop SQL reservation commit failed after a successful trade. " +
+                            "reservation=${reservation.reservationId} shop=${shop.id} entry=${entry.id} " +
+                            "player=${player.uniqueId}. The reservation is COMMIT_RETRY and this entry is paused locally."
+                    )
+                    runSqlReservationMaintenance(logRecovered = true, startup = false)
                     return@withEntryLock TradeResult(false, "trade-persistence-failed", replacements)
                 }
+                reservation?.let { clearAtomicCommitRetry(it, keepPaused = false) }
                 val latestStats = reservedStats
                 if (latestStats != null) {
                     refreshSqlStatsCache(shop.id, entry.id, player.uniqueId, latestStats)
@@ -642,6 +670,35 @@ class ShopService(
         )
     }
 
+    private fun prepareAtomicTradeCommit(
+        reservation: TradeReservation,
+        player: Player,
+        shop: ShopDefinition,
+        entry: ShopEntry,
+        currency: CurrencyDefinition,
+        totalPrice: Long,
+        amount: Int,
+        side: TradeSide
+    ): Boolean {
+        if (!playerDataBackend.prepareShopTradeStatsCommit(reservation)) {
+            rollbackAtomicTradeStats(reservation, player, shop, entry, currency, totalPrice, amount, side)
+            return false
+        }
+
+        return runCatching {
+            sqlCommitRetryStore.add(reservation)
+            keepSqlEntryPaused(shop.id, entry.id)
+            true
+        }.getOrElse { ex ->
+            plugin.logger.severe(
+                "Failed to persist SQL commit retry reservation before trade execution " +
+                    "[reservation:${reservation.reservationId} shop:${shop.id} entry:${entry.id}]: ${ex.message}"
+            )
+            rollbackAtomicTradeStats(reservation, player, shop, entry, currency, totalPrice, amount, side)
+            false
+        }
+    }
+
     private fun rollbackAtomicTradeStats(
         reservation: TradeReservation,
         player: Player,
@@ -651,7 +708,7 @@ class ShopService(
         totalPrice: Long,
         amount: Int,
         side: TradeSide
-    ) {
+    ): Boolean {
         if (!playerDataBackend.rollbackShopTradeStats(reservation)) {
             logCompensation(
                 player = player,
@@ -663,7 +720,9 @@ class ShopService(
                 totalPrice = totalPrice,
                 reason = "trade failed after SQL atomic stats reservation; stats rollback failed"
             )
+            return false
         }
+        return true
     }
 
     fun createEntryRenderSnapshot(
@@ -814,6 +873,9 @@ class ShopService(
         if (cached != null && cached.expiresAtMillis > nowMillis) {
             return cached.stats
         }
+        if (sqlReservationWarmingUp.get()) {
+            return store(shop.id).stats(entry.id, playerId)
+        }
 
         val sqlStats = playerDataBackend.loadShopEntryStats(
             shopId = shop.id,
@@ -847,6 +909,68 @@ class ShopService(
         val nowMillis = Instant.now().toEpochMilli()
         sqlStatsCache[SqlStatsCacheKey(shopId.lowercase(), entryId.lowercase(), playerId)] =
             CachedEntryStats(stats, nowMillis + SQL_STATS_CACHE_TTL_MILLIS)
+    }
+
+    private fun sqlAtomicTradeGuard(shop: ShopDefinition, entry: ShopEntry): TradeResult? {
+        if (!playerDataBackend.supportsAtomicShopStats) {
+            return null
+        }
+        if (sqlReservationWarmingUp.get()) {
+            return TradeResult(
+                false,
+                "trade-persistence-failed",
+                mapOf("shop" to shop.id, "entry" to entry.id)
+            )
+        }
+        if (isSqlEntryPaused(shop.id, entry.id)) {
+            return TradeResult(
+                false,
+                "trade-persistence-failed",
+                mapOf("shop" to shop.id, "entry" to entry.id)
+            )
+        }
+        return null
+    }
+
+    private fun clearAtomicCommitRetry(reservation: TradeReservation, keepPaused: Boolean) {
+        runCatching {
+            sqlCommitRetryStore.remove(reservation.reservationId)
+        }.onFailure { ex ->
+            plugin.logger.severe(
+                "Failed to remove SQL commit retry reservation ${reservation.reservationId}; " +
+                    "shop=${reservation.shopId} entry=${reservation.entryId}: ${ex.message}"
+            )
+            keepSqlEntryPaused(reservation.shopId, reservation.entryId)
+            return
+        }
+        if (keepPaused) {
+            keepSqlEntryPaused(reservation.shopId, reservation.entryId)
+        } else {
+            unpauseSqlEntryIfNoRetry(reservation.shopId, reservation.entryId)
+        }
+    }
+
+    private fun keepSqlEntryPaused(shopId: String, entryId: String) {
+        pausedSqlEntries.add(shopEntryKey(shopId, entryId))
+    }
+
+    private fun isSqlEntryPaused(shopId: String, entryId: String): Boolean {
+        return shopEntryKey(shopId, entryId) in pausedSqlEntries
+    }
+
+    private fun unpauseSqlEntryIfNoRetry(shopId: String, entryId: String) {
+        val stillQueued = runCatching { sqlCommitRetryStore.hasEntry(shopId, entryId) }
+            .onFailure { ex ->
+                plugin.logger.severe("Failed to inspect SQL commit retry queue for $shopId/$entryId: ${ex.message}")
+            }
+            .getOrDefault(true)
+        if (!stillQueued) {
+            pausedSqlEntries.remove(shopEntryKey(shopId, entryId))
+        }
+    }
+
+    private fun shopEntryKey(shopId: String, entryId: String): ShopEntryKey {
+        return ShopEntryKey(shopId.lowercase(), entryId.lowercase())
     }
 
     private fun baseReplacements(context: EntryRenderContext): Map<String, String> {
@@ -1153,7 +1277,7 @@ class ShopService(
             delayTicks = EXPIRED_RESERVATION_RECOVERY_DELAY_TICKS,
             periodTicks = EXPIRED_RESERVATION_RECOVERY_PERIOD_TICKS
         ) {
-            recoverExpiredSqlReservations(logRecovered = true)
+            runSqlReservationMaintenance(logRecovered = true, startup = false)
         }
     }
 
@@ -1162,28 +1286,85 @@ class ShopService(
         expiredReservationRecoveryTask = null
     }
 
-    private fun recoverExpiredSqlReservations(logRecovered: Boolean, async: Boolean = true) {
+    private fun loadSqlCommitRetryPauses(logLoaded: Boolean) {
         if (!playerDataBackend.supportsAtomicShopStats) {
             return
         }
-        val recovery = {
-            val recovered = playerDataBackend.recoverExpiredShopTradeReservations(Instant.now().toEpochMilli())
-            if (recovered > 0) {
-                sqlStatsCache.clear()
-                if (logRecovered) {
-                    plugin.logger.warning("Recovered $recovered expired SQL trade reservation(s); rolled back reserved stats.")
-                }
-            }
+        val queued = runCatching { sqlCommitRetryStore.load() }
+            .onFailure { ex -> plugin.logger.severe("Failed to load SQL commit retry queue: ${ex.message}") }
+            .getOrDefault(emptyList())
+        pausedSqlEntries.clear()
+        queued.forEach { keepSqlEntryPaused(it.shopId, it.entryId) }
+        if (logLoaded && queued.isNotEmpty()) {
+            plugin.logger.severe(
+                "HIGH RISK: Loaded ${queued.size} SQL COMMIT_RETRY reservation(s). " +
+                    "Affected shop entries are paused locally until COMMITTED retry succeeds."
+            )
         }
-        if (!async) {
-            recovery()
+    }
+
+    private fun runSqlReservationMaintenance(logRecovered: Boolean, startup: Boolean) {
+        if (!playerDataBackend.supportsAtomicShopStats) {
+            return
+        }
+        if (startup) {
+            sqlReservationWarmingUp.set(true)
+        }
+        if (!sqlReservationMaintenanceRunning.compareAndSet(false, true)) {
+            if (startup) {
+                sqlReservationWarmingUp.set(false)
+            }
             return
         }
         platformExecutor.runGlobalAsync {
-            recovery()
+            try {
+                retrySqlCommitReservations()
+                val recovered = playerDataBackend.recoverExpiredShopTradeReservations(Instant.now().toEpochMilli())
+                if (recovered > 0) {
+                    sqlStatsCache.clear()
+                    if (logRecovered) {
+                        plugin.logger.warning(
+                            "Recovered $recovered expired SQL PENDING trade reservation(s); rolled back reserved stats."
+                        )
+                    }
+                }
+            } finally {
+                sqlReservationMaintenanceRunning.set(false)
+                if (startup) {
+                    sqlReservationWarmingUp.set(false)
+                }
+            }
         }.exceptionally { ex ->
-            plugin.logger.severe("Failed to schedule expired SQL trade reservation recovery: ${ex.message}")
+            sqlReservationMaintenanceRunning.set(false)
+            if (startup) {
+                sqlReservationWarmingUp.set(false)
+            }
+            plugin.logger.severe("Failed to run SQL trade reservation maintenance: ${ex.message}")
             null
+        }
+    }
+
+    private fun retrySqlCommitReservations() {
+        val queued = runCatching { sqlCommitRetryStore.load() }
+            .onFailure { ex -> plugin.logger.severe("Failed to read SQL commit retry queue: ${ex.message}") }
+            .getOrDefault(emptyList())
+        queued.forEach { reservation ->
+            keepSqlEntryPaused(reservation.shopId, reservation.entryId)
+            val committed = playerDataBackend.commitShopTradeStats(reservation)
+            if (committed) {
+                clearAtomicCommitRetry(reservation, keepPaused = false)
+                invalidateSqlStatsCache(reservation.shopId, reservation.entryId, reservation.playerId)
+                plugin.logger.warning(
+                    "Retried and committed SQL trade reservation ${reservation.reservationId} " +
+                        "for ${reservation.shopId}/${reservation.entryId}."
+                )
+            } else {
+                plugin.logger.severe(
+                    "HIGH RISK: SQL COMMIT_RETRY reservation still cannot be marked COMMITTED. " +
+                        "reservation=${reservation.reservationId} shop=${reservation.shopId} entry=${reservation.entryId} " +
+                        "player=${reservation.playerId}. Entry remains paused locally and requires retry or admin handling."
+                )
+            }
         }
     }
 

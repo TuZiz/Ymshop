@@ -54,6 +54,10 @@ interface ShopStatsRepository {
         return false
     }
 
+    fun prepareShopTradeStatsCommit(reservation: TradeReservation): Boolean {
+        return false
+    }
+
     fun commitShopTradeStats(reservation: TradeReservation): Boolean {
         return false
     }
