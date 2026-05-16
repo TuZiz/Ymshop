@@ -122,51 +122,9 @@ class SqlPlayerDataBackend(
     }
 
     override fun loadShopSnapshot(shopId: String): ShopStatsSnapshot {
-        val snapshot = ShopStatsSnapshot()
-        withConnection { connection ->
-            connection.prepareStatement(
-                """
-                SELECT player_id, entry_id, total, buy, sell, buy_reset_marker, sell_reset_marker
-                FROM ymshop_shop_player_stats
-                WHERE shop_id = ?
-                """.trimIndent()
-            ).use { statement ->
-                statement.setString(1, shopId)
-                statement.executeQuery().use { result ->
-                    while (result.next()) {
-                        val playerId = runCatching { UUID.fromString(result.getString("player_id")) }.getOrNull() ?: continue
-                        snapshot.playerRows[ShopPlayerStatsKey(playerId, result.getString("entry_id"))] = ShopStatsRow(
-                            total = result.getLong("total"),
-                            buy = result.getLong("buy"),
-                            sell = result.getLong("sell"),
-                            buyResetMarker = result.getLong("buy_reset_marker"),
-                            sellResetMarker = result.getLong("sell_reset_marker")
-                        )
-                    }
-                }
-            }
-            connection.prepareStatement(
-                """
-                SELECT entry_id, total, buy, sell, buy_reset_marker, sell_reset_marker
-                FROM ymshop_shop_global_stats
-                WHERE shop_id = ?
-                """.trimIndent()
-            ).use { statement ->
-                statement.setString(1, shopId)
-                statement.executeQuery().use { result ->
-                    while (result.next()) {
-                        snapshot.globalRows[result.getString("entry_id")] = ShopStatsRow(
-                            total = result.getLong("total"),
-                            buy = result.getLong("buy"),
-                            sell = result.getLong("sell"),
-                            buyResetMarker = result.getLong("buy_reset_marker"),
-                            sellResetMarker = result.getLong("sell_reset_marker")
-                        )
-                    }
-                }
-            }
-        }
-        return snapshot
+        // SQL shop stats are read through loadShopEntryStats() and modified only by atomic
+        // reservations. The legacy in-memory snapshot is single-server display fallback only.
+        return ShopStatsSnapshot()
     }
 
     override fun saveShopChanges(
